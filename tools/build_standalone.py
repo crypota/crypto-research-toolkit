@@ -8,7 +8,7 @@ def main():
     css_tag = '<link rel="stylesheet" href="assets/dashboard.css">'
     assert css_tag in html
     html = html.replace(css_tag, '<style>\n' + (root / "assets/dashboard.css").read_text(encoding="utf-8") + '\n</style>')
-    for name in ("analytics", "coingecko", "dashboard"):
+    for name in ("i18n", "analytics", "coingecko", "dashboard"):
         tag = f'<script defer src="assets/{name}.js"></script>'
         assert tag in html
         # Inline scripts run after the HTML, keeping file:// operation dependency-free.

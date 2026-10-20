@@ -19,7 +19,7 @@ const { chromium } = require('playwright');
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const baseURL = `http://127.0.0.1:${server.address().port}`;
   const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || chromium.executablePath(), args: ['--no-sandbox'] });
-  const page = await browser.newPage({ viewport: { width: 1512, height: 1100 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ locale: 'ru-RU', viewport: { width: 1512, height: 1100 }, deviceScaleFactor: 1 });
   const errors = [], network = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('request', r => { if (/^https?:/.test(r.url()) && !r.url().startsWith(baseURL + '/')) network.push(r.url()); });

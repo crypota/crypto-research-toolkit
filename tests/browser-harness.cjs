@@ -26,7 +26,7 @@ async function openDashboard() {
     }
     browser = await chromium.launch({ headless: true, proxy, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || chromium.executablePath(), args: ['--no-sandbox'] });
   } catch (error) { server.close(); throw error; }
-  const page = await browser.newPage({ viewport: { width: 1512, height: 1200 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ locale: 'ru-RU', viewport: { width: 1512, height: 1200 }, deviceScaleFactor: 1 });
   return { root, baseURL, page, browser, close: async () => { await browser.close(); await new Promise(resolve => server.close(resolve)); } };
 }
 module.exports = { openDashboard };

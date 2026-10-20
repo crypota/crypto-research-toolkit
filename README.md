@@ -19,7 +19,31 @@ The included ALPHA, BETA, GAMMA and SAMPLE data is **fictional**, not live marke
 4. Search by name/ticker to add other CoinGecko-listed coins, or work with CSV/demo data.
 
 Alternatively, open `index.html` from the extracted repository, keeping the
-`assets` directory beside it. The interface is in Russian.
+`assets` directory beside it. The interface supports English, Korean, Japanese, German, Russian and Spanish.
+
+### Languages
+
+Use the language menu at the top right: **English · 한국어 · 日本語 · Deutsch · Русский · Español**.
+The initial language follows your supported browser preference, with English as
+the fallback. An explicit selection is remembered for this page when browser
+storage is available. Only the language code (`crt.language`) is stored: never
+API keys, loaded prices or CSV contents.
+
+Switching languages does not reload the page, change selected assets/periods,
+clear a connection or make API requests. UI labels, dialogs, accessibility labels,
+validation/API errors, existing messages/search results and chart tooltips update.
+Dates and numbers follow the locale; all observation times remain UTC.
+
+Markdown and SVG reports and human-readable JSON notes use the selected language.
+JSON adds a `language` code. Machine-readable JSON/CSV field names, decimal-point
+numbers, booleans, ticker symbols, CoinGecko IDs and ISO timestamps stay stable.
+The Python CLI remains a separate command-line tool.
+
+Translations are bundled in `assets/i18n.js`; there is no translation API, CDN,
+external font download or per-language network request. The app uses installed
+system fonts for Korean and Japanese. Russian source strings are stable
+gettext-style message IDs; keep all five translated values and named placeholders
+when updating a message.
 
 ### CoinGecko connection
 
@@ -29,7 +53,7 @@ are loaded only when you explicitly click the demo button.
 - Get a free Demo key from the [CoinGecko Developer Dashboard](https://www.coingecko.com/en/developers/dashboard).
 - Enter it in the password field inside the app. The field is cleared after connection.
 - The key lives only inside the API client in page memory: never in HTML/source,
-  URLs, localStorage, sessionStorage or exports. The app has no server-side key store. Reload/close the
+  URLs, localStorage, sessionStorage or exports (only the language preference is saved). The app has no server-side key store. Reload/close the
   page or disconnect to clear the client. Disconnect retains already loaded prices.
 - Authenticated requests go directly to `https://api.coingecko.com`, using the
   `x-cg-demo-api-key` header. CoinGecko receives the key, coin IDs/search terms
@@ -116,9 +140,14 @@ Plain HTML/CSS/JavaScript, without frontend dependencies. From the repo root:
 
 ```sh
 python tools/build_standalone.py
-node --test tests/analytics.test.cjs tests/coingecko.test.cjs
+node --test tests/analytics.test.cjs tests/coingecko.test.cjs tests/i18n.test.cjs
 python -m unittest discover -s tests -v
 ```
+
+The six-language suite additionally checks live switching, localized messages,
+number/date formatting, stable export contracts, language-only persistence and
+24 language/viewport combinations (320, 390, 768 and 1400 px). API fixtures are
+explicitly synthetic.
 
 The first command regenerates `dist/crypto-research-toolkit.html` from source.
 Commit source and bundle together. Node 18+ is needed only for developer tests.
@@ -131,6 +160,7 @@ npx playwright install chromium
 node tests/dashboard-browser.cjs
 node tests/coingecko-browser.cjs
 node tests/audit-browser.cjs
+node tests/i18n-browser.cjs
 ```
 
 The offline browser suite checks CSV import, invalid data, periods, chart controls,
