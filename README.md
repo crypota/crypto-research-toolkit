@@ -1,114 +1,98 @@
 # Crypto Research Toolkit
 
-A local-first browser dashboard with CoinGecko integration and a Python CLI.
-Compare trajectories, inspect drawdowns, check sampling quality and export a
-research report. Use a CoinGecko Demo API key for online history, or work offline
-with CSV files. No wallet connection, CDN or backend is required.
+A browser dashboard for comparing crypto price histories, inspecting drawdowns
+and saving a research report. Load CoinGecko data with your Demo API key, or work
+locally with CSV files. A Python CLI is included for decimal calculations.
 
-The included ALPHA, BETA, GAMMA and SAMPLE data is **fictional**, not live market data.
+[**User guide**](docs/USER_GUIDE.md) · [**Quick start**](#quick-start) · [**Development & CLI**](#development-and-checks)
 
-![Dashboard preview](docs/dashboard-preview.png)
+![Crypto Research Toolkit — English dashboard](docs/dashboard-preview.png)
 
-## Open the dashboard
+*English interface. ALPHA, BETA and GAMMA are fictional demo assets, not real market prices.*
 
-1. Download this repository with **Code → Download ZIP**, then extract it.
-2. Open **`dist/crypto-research-toolkit.html`** in a modern browser. This one file
-   includes everything it needs and can be moved or shared independently.
-3. Click **Подключить CoinGecko**, paste your Demo API key, and choose
-   **Подключить и загрузить** to fetch Bitcoin, Ethereum and Solana.
-4. Search by name/ticker to add other CoinGecko-listed coins, or work with CSV/demo data.
+## Quick start
 
-Alternatively, open `index.html` from the extracted repository, keeping the
-`assets` directory beside it. The interface supports English, Korean, Japanese, German, Russian and Spanish.
+1. Choose **Code → Download ZIP** on GitHub and extract the archive.
+2. Open **`dist/crypto-research-toolkit.html`** in your browser. No installation or build is needed.
+3. Select **English** in the language menu at the top right.
+4. Click **Connect CoinGecko**, paste your Demo API key, then choose **Connect and load**. Bitcoin, Ethereum and Solana load in USD.
+5. Check the assets to compare, choose **Compare · 100**, and select a chart period.
+6. Use **Export report** to save the result.
 
-### Languages
+**No key yet?** Click **Load demo data** to explore, or **Add CSV** to analyze your own history.
 
-Use the language menu at the top right: **English · 한국어 · 日本語 · Deutsch · Русский · Español**.
-The initial language follows your supported browser preference, with English as
-the fallback. An explicit selection is remembered for this page when browser
-storage is available. Only the language code (`crt.language`) is stored: never
-API keys, loaded prices or CSV contents.
+The standalone HTML contains the whole dashboard. Download and open it locally;
+viewing its source on GitHub does not run the app. You can also open `index.html`
+from an extracted repository with the `assets` folder beside it.
 
-Switching languages does not reload the page, change selected assets/periods,
-clear a connection or make API requests. UI labels, dialogs, accessibility labels,
-validation/API errors, existing messages/search results and chart tooltips update.
-Dates and numbers follow the locale; all observation times remain UTC.
+## What you can do
 
-Markdown and SVG reports and human-readable JSON notes use the selected language.
-JSON adds a `language` code. Machine-readable JSON/CSV field names, decimal-point
-numbers, booleans, ticker symbols, CoinGecko IDs and ISO timestamps stay stable.
-The Python CLI remains a separate command-line tool.
+| Task | Controls |
+| --- | --- |
+| Compare relative price changes | Check assets → **Compare · 100**. |
+| Inspect one asset’s price | Select an asset → **Price**. |
+| Fetch a longer history | Choose 7, 30, 90 or 365 days under **History**. |
+| Filter observations already loaded | Use **7D / 30D / 90D / All loaded**. |
+| Request updated online data | Click **Refresh**. |
+| Analyze your own observations | **Add CSV**, or drag and drop a file. |
+| Save research | **Export report** → Markdown, JSON, CSV or SVG. |
 
-Translations are bundled in `assets/i18n.js`; there is no translation API, CDN,
-external font download or per-language network request. The app uses installed
-system fonts for Korean and Japanese. Russian source strings are stable
-gettext-style message IDs; keep all five translated values and named placeholders
-when updating a message.
+**All loaded is not lifetime history.** If you loaded only 90 days, it can look
+the same as **90D**. For a longer lookback, choose **365 days** under **History**.
+Comparisons use only the overlapping period of the checked assets.
 
-### CoinGecko connection
+Read the [step-by-step user guide](docs/USER_GUIDE.md) for connection setup,
+metric explanations, CSV examples, mobile use and troubleshooting.
 
-The default workspace starts empty and offers real market history. Demo series
-are loaded only when you explicitly click the demo button.
+## Setup and mobile preview
 
-- Get a free Demo key from the [CoinGecko Developer Dashboard](https://www.coingecko.com/en/developers/dashboard).
-- Enter it in the password field inside the app. The field is cleared after connection.
-- The key lives only inside the API client in page memory: never in HTML/source,
-  URLs, localStorage, sessionStorage or exports (only the language preference is saved). The app has no server-side key store. Reload/close the
-  page or disconnect to clear the client. Disconnect retains already loaded prices.
-- Authenticated requests go directly to `https://api.coingecko.com`, using the
-  `x-cg-demo-api-key` header. CoinGecko receives the key, coin IDs/search terms
-  and your network request information. CSV file contents stay local.
-- The app fetches history on connect and on user actions. It does not poll in the
-  background. The first BTC/ETH/SOL load uses three history requests.
-- Successful responses are cached in memory for five minutes for repeated loads.
-  **Обновить** always makes new API requests and preserves the selected chart filter;
-  it does not bypass provider rate limits. CoinGecko can still serve delayed prices.
-- Choose 7/30/90/365 days in **История** to fetch a different lookback. The chart's
-  separate 7/30/90/**Вся загрузка** buttons filter already loaded observations
-  without API calls. All loaded history is not the coin's lifetime history. The
-  visible period explanation shows the available date range; changing the API
-  lookback resets the chart filter to all loaded history.
-- Search shows exact CoinGecko IDs to distinguish similarly named assets. It
-  covers CoinGecko's coin search, not arbitrary onchain contracts or DEX pools.
-- During loading, CSV import and asset changes are locked to prevent conflicting
-  updates. **Отменить загрузку** aborts the request, clears the key, and retains
-  observations already received. Reconnect before making new requests.
-- Each online asset shows its requested lookback and fetch time. Partial failures
-  explicitly report which histories were retained.
-- Bad keys, plan/network errors and rate limits are explained. Failed refreshes
-  keep previously loaded data; they never silently substitute synthetic prices.
+<table>
+<tr>
+<td align="center"><img src="docs/coingecko-setup-en.png" alt="Connect CoinGecko — English setup dialog, empty key field" width="600"></td>
+<td align="center"><img src="docs/dashboard-mobile-overview-en.png" alt="English mobile dashboard with fictional demo data" width="180"></td>
+</tr>
+<tr><td align="center">Connect your own Demo API key</td><td align="center">Responsive mobile layout</td></tr>
+</table>
 
-Each online dataset records its CoinGecko ID, credential-free source URL,
-fetch time and excluded malformed/duplicate rows. JSON and Markdown reports
-include provenance, not credentials. API history is sampled and can be delayed;
-it is not a streaming trading feed. Demo history is limited by the provider's plan.
+Screenshots use fictional demo data. No API key appears in these images.
 
-If direct browser access fails because of network/CORS restrictions, the app
-shows an error and CSV/demo remain usable; it does not forward your key through
-an untrusted public proxy.
+## CoinGecko and privacy
+
+- Get a Demo API key from the [CoinGecko Developer Dashboard](https://www.coingecko.com/en/developers/dashboard).
+- The key is sent directly to `api.coingecko.com` in the `x-cg-demo-api-key` header and retained only in the open page’s memory. It is not saved in the source, browser storage or reports.
+- Closing/reloading the page clears the data and key. **Disconnect and clear key** clears the connection while retaining loaded observations.
+- Fetching happens on connect and user actions; there is no background polling. Repeated loads can use a five-minute cache. **Refresh** makes new requests and preserves your chart filter; provider delays and quotas still apply.
+- **Cancel loading** aborts the request and clears the key. Already received observations are retained. Reconnect before requesting again.
+- Errors and partial refreshes are reported. Failed series keep their previous data; real histories are never silently replaced with demo prices.
+- CSV contents remain local. The only saved browser preference is the language code.
+
+Search covers CoinGecko-listed coins, not arbitrary onchain contracts or DEX pools.
+API access depends on your provider plan and network. If browser access is
+blocked by network or CORS restrictions, CSV and demo mode remain available.
 
 API references: [history](https://docs.coingecko.com/demo/reference/coins-id-market-chart),
 [coin search](https://docs.coingecko.com/demo/reference/search-data),
 [errors/rate limits](https://docs.coingecko.com/docs/errors-and-rate-limits).
 Market data attribution: [CoinGecko](https://www.coingecko.com/en/api).
 
-### Features
+## Six interface languages
 
-- Import or drag-and-drop up to eight CSV files, one asset/quote pair per file.
-- Choose an active asset; check other series to include them in comparison.
-- Switch between actual price and comparison normalized to 100.
-- Select 7, 30, 90 days or all history, relative to the last observation.
-- Inspect charts with the pointer or keyboard: focus a chart, use arrow keys,
-  Home/End, or Escape to dismiss the tooltip.
-- Read change, maximum sampled drawdown, extrema and observation counts.
-- Inspect sampling intervals, unusually long intervals and the last file observation.
-- Export Markdown/JSON reports, combined observations as CSV, or a chart as SVG.
+**English · 한국어 · 日本語 · Deutsch · Русский · Español**
 
-Imported files, API responses and credentials stay in browser memory.
-Closing/reloading the page clears them. Loading a
-new file never modifies the original on disk. Demo loading adds three series.
+Use the menu at the top right. The initial language follows a supported browser
+preference, with English as the fallback. An explicit choice is remembered when
+storage is available. Switching keeps loaded data, selection, chart period and
+connection without making API calls.
 
-### Comparison rules and limitations
+UI labels, messages, accessibility labels, chart tooltips and human-readable
+reports follow the selected language. Dates and regular decimal formatting use
+that locale; observation times remain UTC. JSON/CSV field names, numeric data,
+tickers, CoinGecko IDs and ISO timestamps stay stable. The Python CLI is separate.
+
+Translations are bundled in `assets/i18n.js`: no translation service, CDN or
+external font download is needed. The app uses installed system fonts.
+
+## Methodology and limitations
 
 Comparison uses the **intersection of selected time ranges**. Each series needs
 at least two observations inside that window. Insufficient overlap is shown
@@ -169,7 +153,18 @@ The behavioral audit additionally checks every period button, fresh refreshes,
 all exports, mobile/tablet dialogs, capacity, cancellation, concurrent-import
 guards and standalone file operation. See [audit findings](docs/audit-2026-10-20.md).
 The CoinGecko browser suite intercepts requests with explicitly synthetic test
-fixtures to check key isolation, cache, search, provenance, API errors and disconnect. Screenshots are saved in `docs/`.
+fixtures to check key isolation, cache, search, provenance, API errors and disconnect.
+Regression screenshots use temporary paths so they do not overwrite the published
+English documentation images.
+
+To regenerate all six English documentation screenshots with fictional demo data
+and an empty key field, run:
+
+```sh
+node tools/capture_docs.cjs
+```
+
+This writes the images in `docs/` without making external API requests.
 
 An optional real-data smoke test is available as `tests/coingecko-live.cjs`.
 It reads `COINGECKO_DEMO_API_KEY` from the process environment without printing it.
@@ -246,15 +241,6 @@ not proof that two sources describe the same asset.
 Bug reports should include a minimal **synthetic** CSV, the command, expected
 result and Python version. Please do not submit API keys, private trading history
 or wallet credentials. Run the test command above before proposing code changes.
-
-## По-русски
-
-Панель в браузере показывает цены, просадки, сравнение и качество данных.
-Откройте `dist/crypto-research-toolkit.html`, нажмите «Подключить CoinGecko»
-и введите Demo API-ключ. BTC, ETH и SOL загрузятся автоматически.
-Можно также загрузить CSV или отдельно включить деморежим. Python CLI
-доступен отдельно для десятичных расчётов. Демонстрационные данные вымышленные;
-полученный отчёт не является оценкой надёжности токена или торговым сигналом.
 
 ## License
 
