@@ -28,6 +28,27 @@ test('history cache reuses timestamp; distinct periods fetch separately; expires
   await c.history(coin, 7); assert.equal(calls, 2);
   now = 400000; await c.history(coin, 30); assert.equal(calls, 3);
 });
+test('explicit refresh bypasses cache but still respects quota cooldown', async () => {
+  let calls = 0, now = 1000, status = 200;
+  const c = client(async () => { calls++; return response(payload, status); }, { now: () => now });
+  await c.history(coin, 90); now = 2000;
+  assert.equal((await c.history(coin, 90, { refresh: true })).fetchedAt, 2000);
+  assert.equal(calls, 2);
+  status = 429;
+  await assert.rejects(c.history(coin, 90, { refresh: true }), e => e.kind === 'rate');
+  await assert.rejects(c.history(coin, 90, { refresh: true }), e => e.kind === 'rate');
+  assert.equal(calls, 3);
+});
+test('malformed history/search responses do not poison the response cache', async () => {
+  let calls = 0;
+  const c = client(async () => response(++calls === 1 ? { prices: [] } : payload));
+  await assert.rejects(c.history(coin));
+  assert.equal((await c.history(coin)).points.length, 2); assert.equal(calls, 2);
+  let searches = 0;
+  const s = client(async () => response(++searches === 1 ? {} : { coins: [] }));
+  await assert.rejects(s.search('btc'));
+  assert.deepEqual(await s.search('btc'), []); assert.equal(searches, 2);
+});
 test('queued calls are serialized and a failed call does not poison queue', async () => {
   let calls = 0, pending = 0, peak = 0;
   const c = client(async () => { calls++; peak = Math.max(peak, ++pending); await new Promise(r => setTimeout(r, 5)); pending--; return response({}, calls === 1 ? 500 : 200); });
@@ -79,4 +100,10 @@ test('disconnect aborts active request and rejects future calls', async () => {
   const pending = c.history(coin); await wait; c.disconnect();
   await assert.rejects(pending, e => e.kind === 'closed');
   await assert.rejects(c.history(coin), e => e.kind === 'closed');
+});
+test('request timeout aborts fetch and returns a sanitized network error', async () => {
+  const c = client(async (url, options) => new Promise((resolve, reject) => {
+    options.signal.addEventListener('abort', () => reject(Object.assign(Error(KEY), { name: 'AbortError' })));
+  }), { timeoutMs: 5 });
+  await assert.rejects(c.history(coin), e => e.kind === 'network' && /20 секунд/.test(e.message) && !e.message.includes(KEY));
 });

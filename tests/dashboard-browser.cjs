@@ -35,7 +35,7 @@ const { chromium } = require('playwright');
   await page.getByRole('button', { name: 'Цена', exact: true }).click();
   assert.equal(await page.locator('#comparison-body tr').count(), 1);
   await page.getByRole('button', { name: 'Сравнение · 100', exact: true }).click();
-  await page.getByRole('button', { name: 'Всё', exact: true }).click();
+  await page.getByRole('button', { name: 'Вся загрузка', exact: true }).click();
   await page.locator('#price-chart').focus(); await page.keyboard.press('ArrowRight');
   assert.equal(await page.locator('#price-chart .chart-tooltip').isVisible(), true);
   await page.keyboard.press('Escape');

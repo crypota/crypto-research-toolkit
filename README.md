@@ -36,12 +36,21 @@ are loaded only when you explicitly click the demo button.
   and your network request information. CSV file contents stay local.
 - The app fetches history on connect and on user actions. It does not poll in the
   background. The first BTC/ETH/SOL load uses three history requests.
-- Successful responses are cached in memory for five minutes. Clicking refresh
-  inside that window can reuse cached responses; the original fetch time remains.
+- Successful responses are cached in memory for five minutes for repeated loads.
+  **Обновить** always makes new API requests and preserves the selected chart filter;
+  it does not bypass provider rate limits. CoinGecko can still serve delayed prices.
 - Choose 7/30/90/365 days in **История** to fetch a different lookback. The chart's
-  separate 7/30/90/all buttons filter already loaded observations without API calls.
+  separate 7/30/90/**Вся загрузка** buttons filter already loaded observations
+  without API calls. All loaded history is not the coin's lifetime history. The
+  visible period explanation shows the available date range; changing the API
+  lookback resets the chart filter to all loaded history.
 - Search shows exact CoinGecko IDs to distinguish similarly named assets. It
   covers CoinGecko's coin search, not arbitrary onchain contracts or DEX pools.
+- During loading, CSV import and asset changes are locked to prevent conflicting
+  updates. **Отменить загрузку** aborts the request, clears the key, and retains
+  observations already received. Reconnect before making new requests.
+- Each online asset shows its requested lookback and fetch time. Partial failures
+  explicitly report which histories were retained.
 - Bad keys, plan/network errors and rate limits are explained. Failed refreshes
   keep previously loaded data; they never silently substitute synthetic prices.
 
@@ -85,7 +94,7 @@ nearest observation time for each series. Missing records are not resampled or
 invented. Lines connect recorded points as a visual guide.
 
 Drawdown resets at the beginning of the selected period. The quality panel
-checks that period, while its last-file-observation date uses the entire file.
+checks that period, while its last-observation date uses the entire dataset.
 An interval over 1.5 times the median is a **heuristic**, not proof of a missing
 record. Even uniform intervals do not establish authenticity or completeness.
 
@@ -121,10 +130,14 @@ npm install --no-save playwright
 npx playwright install chromium
 node tests/dashboard-browser.cjs
 node tests/coingecko-browser.cjs
+node tests/audit-browser.cjs
 ```
 
 The offline browser suite checks CSV import, invalid data, periods, chart controls,
 exports, mobile and standalone operation without external network requests.
+The behavioral audit additionally checks every period button, fresh refreshes,
+all exports, mobile/tablet dialogs, capacity, cancellation, concurrent-import
+guards and standalone file operation. See [audit findings](docs/audit-2026-10-20.md).
 The CoinGecko browser suite intercepts requests with explicitly synthetic test
 fixtures to check key isolation, cache, search, provenance, API errors and disconnect. Screenshots are saved in `docs/`.
 

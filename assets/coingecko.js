@@ -46,12 +46,16 @@
     const timeout = options.timeoutMs ?? 20000;
     const cache = new Map(); let chain = Promise.resolve(), nextAt = 0, blockedUntil = 0, closed = false, active;
     const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
-    async function execute(path, params) {
-      if (closed) throw new APIError('Подключение отключено.', 'closed');
+    function requestURL(path, params) {
       const url = new URL(path, ROOT);
       for (const [name, value] of Object.entries(params)) url.searchParams.set(name, value);
+      return url;
+    }
+    async function execute(path, params, refresh) {
+      if (closed) throw new APIError('Подключение отключено.', 'closed');
+      const url = requestURL(path, params);
       const cached = cache.get(url.href);
-      if (cached && cached.expires > now()) return cached.data;
+      if (!refresh && cached && cached.expires > now()) return cached.data;
       if (blockedUntil > now()) throw new APIError('Лимит CoinGecko: подождите около минуты перед новым запросом.', 'rate');
       if (nextAt > now()) await pause(nextAt - now());
       if (closed) throw new APIError('Подключение отключено.', 'closed');
@@ -86,21 +90,26 @@
         throw new APIError('Нет связи с CoinGecko. Проверьте интернет; возможна блокировка сети или CORS. CSV и деморежим доступны.', 'network');
       } finally { clearTimeout(timer); if (active === controller) active = null; }
     }
-    function request(path, params) {
-      const result = chain.catch(() => {}).then(() => execute(path, params)); chain = result; return result;
+    function request(path, params, refresh = false) {
+      const result = chain.catch(() => {}).then(() => execute(path, params, refresh)); chain = result; return result;
     }
     return {
-      async history(coin, days = 90) {
+      async history(coin, days = 90, { refresh = false } = {}) {
         validID(coin.id);
         if (![7, 30, 90, 365].includes(days)) throw new APIError('Выберите 7, 30, 90 или 365 дней истории.', 'input');
-        const data = await request('coins/' + encodeURIComponent(coin.id) + '/market_chart', { vs_currency: 'usd', days });
-        return normalizeHistory(data.payload, coin, days, data.fetchedAt);
+        const path = 'coins/' + encodeURIComponent(coin.id) + '/market_chart', params = { vs_currency: 'usd', days };
+        const data = await request(path, params, refresh);
+        try { return normalizeHistory(data.payload, coin, days, data.fetchedAt); }
+        catch (error) { cache.delete(requestURL(path, params).href); throw error; }
       },
       async search(query) {
         query = String(query).trim();
         if (query.length < 2 || query.length > 64) throw new APIError('Введите от 2 до 64 символов для поиска.', 'input');
         const { payload } = await request('search', { query });
-        if (!Array.isArray(payload.coins)) throw new APIError('Не удалось прочитать результаты поиска CoinGecko.', 'data');
+        if (!Array.isArray(payload.coins)) {
+          cache.delete(requestURL('search', { query }).href);
+          throw new APIError('Не удалось прочитать результаты поиска CoinGecko.', 'data');
+        }
         return payload.coins.filter(c => c && /^[a-z0-9][a-z0-9_-]{0,127}$/.test(c.id)).slice(0, 12)
           .map(c => ({ id: c.id, symbol: String(c.symbol || '').slice(0, 50), name: String(c.name || c.id).slice(0, 150), rank: c.market_cap_rank ?? null }));
       },

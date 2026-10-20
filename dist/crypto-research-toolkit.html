@@ -23,6 +23,11 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
 @media(max-width:1150px){.online-controls{flex-wrap:wrap}.coin-search{flex-basis:100%}.online-heading h2{font-size:16px}.online-bottom{align-items:flex-start}.quick-coins>span{display:none}.online-panel{padding:18px}.online-heading .button{font-size:10px}}
 @media(max-width:560px){.online-panel{padding:17px 15px;margin-bottom:20px}.online-heading{display:block}.online-heading .button{margin-top:14px;font-size:11px}.online-heading h2{font-size:16px}.online-controls{gap:10px}.coin-search{width:100%}.coin-search input{font-size:10px;padding:10px;max-width:100%}.coin-search .button{font-size:10px;padding:9px 12px}.history-select{font-size:10px}.online-bottom{display:block}.quick-coins{margin-bottom:12px}#cg-status{display:block;text-align:left;line-height:1.6}.attribution{font-size:8px}.active-title{max-width:100%;width:100%}.search-result strong{font-size:11px}.search-result div>span{font-size:8px}.search-result .button{font-size:9px}}
 
+/* Audit fixes: explicit loaded range, reliable hidden states and accessible mobile help. */
+[hidden]{display:none!important}.period-help{font-size:10px;color:var(--muted);line-height:1.7;margin:-9px 0 21px}.upload-box[aria-disabled="true"]{opacity:.45;cursor:not-allowed}.online-controls{flex-wrap:wrap}.active-title{max-width:65%}@media(max-width:850px){#format-open{display:inline-flex;width:auto;font-size:10px;padding:7px 9px;margin:8px 6px 8px 0}#format-open>span{display:none}}@media(max-width:560px){.active-title{max-width:100%}.periods{max-width:100%;gap:2px}.periods button{padding:5px 9px}.period-help{font-size:9px;margin-top:-8px}}
+
+@media(max-width:850px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.metric{min-width:0}.metric-value,.metric-note{overflow-wrap:anywhere}}@media(max-width:360px){.metric-value{font-size:22px}.metric{padding:12px}.metric-label{font-size:8px}}
+
 </style>
   
   
@@ -44,7 +49,7 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
     </label>
     <input type="file" id="csv-input" accept=".csv,text/csv" multiple hidden>
     <button id="demo-load" class="text-button">↻ Загрузить демоданные</button>
-    <div class="sidebar-bottom"><div class="privacy-icon">⌘</div><strong>Ваши данные — у вас</strong><p>CSV остаются в браузере.<br>Ключ передаётся только CoinGecko.</p><span class="version">LOCAL FIRST <span>v0.3</span></span></div>
+    <div class="sidebar-bottom"><div class="privacy-icon">⌘</div><strong>Ваши данные — у вас</strong><p>CSV остаются в браузере.<br>Ключ передаётся только CoinGecko.</p><span class="version">LOCAL FIRST <span>v0.3.1</span></span></div>
   </aside>
   <div class="workspace">
     <header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong>Исследование</strong></div><div class="topbar-right"><span class="local-badge"><i></i> Локальные расчёты</span><a href="https://github.com/crypota/crypto-research-toolkit" target="_blank" rel="noopener noreferrer" class="github-link">GitHub ↗</a></div></header>
@@ -54,13 +59,13 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
       <div id="messages" class="messages" aria-live="polite"></div>
       <section class="panel online-panel" aria-labelledby="online-heading">
         <div class="online-heading"><div><div class="section-kicker">РЕАЛЬНЫЕ ДАННЫЕ</div><h2 id="online-heading">Подключите рынок к исследованию</h2></div><button id="cg-connect" class="button primary">Подключить CoinGecko</button></div>
-        <div class="online-controls"><form id="cg-search-form" class="coin-search"><label class="sr-only" for="cg-search">Поиск монеты CoinGecko</label><input id="cg-search" type="search" placeholder="Название или тикер: Bitcoin, SOL…" maxlength="64" autocomplete="off"><button type="submit" id="cg-search-button" class="button secondary">Найти</button></form><label class="history-select">История <select id="cg-history"><option value="7">7 дней</option><option value="30">30 дней</option><option value="90" selected>90 дней</option><option value="365">365 дней</option></select></label><button id="cg-refresh" class="button secondary" disabled>↻ Обновить</button></div>
+        <div class="online-controls"><form id="cg-search-form" class="coin-search"><label class="sr-only" for="cg-search">Поиск монеты CoinGecko</label><input id="cg-search" type="search" placeholder="Название или тикер: Bitcoin, SOL…" maxlength="64" autocomplete="off"><button type="submit" id="cg-search-button" class="button secondary">Найти</button></form><label class="history-select">История <select id="cg-history"><option value="7">7 дней</option><option value="30">30 дней</option><option value="90" selected>90 дней</option><option value="365">365 дней</option></select></label><button id="cg-refresh" class="button secondary" title="Новый запрос к CoinGecko, без кэша приложения" disabled>↻ Обновить</button><button id="cg-cancel" class="button secondary" hidden>Отменить загрузку</button></div>
         <div class="online-bottom"><div class="quick-coins"><span>Быстро добавить:</span><button data-coin="bitcoin">BTC</button><button data-coin="ethereum">ETH</button><button data-coin="solana">SOL</button></div><span id="cg-status" role="status">Ключ вводится один раз на открытую страницу</span></div>
         <div id="cg-results" class="search-results" aria-live="polite"></div><p class="attribution">Данные: <a href="https://www.coingecko.com/en/api" target="_blank" rel="noopener noreferrer">CoinGecko ↗</a> · обновление по запросу · кэш 5 минут</p>
       </section>
-      <section class="research-toolbar" aria-label="Настройки исследования"><div class="active-title"><span class="coin-icon" id="active-icon">A</span><div><h2 id="active-symbol">—</h2><span id="active-source">Нет данных</span></div></div><div class="periods" role="group" aria-label="Период"><button data-days="7">7Д</button><button data-days="30">30Д</button><button data-days="90">90Д</button><button class="selected" data-days="0">Всё</button></div></section>
+      <section class="research-toolbar" aria-label="Настройки исследования" aria-describedby="period-help"><div class="active-title"><span class="coin-icon" id="active-icon">A</span><div><h2 id="active-symbol">—</h2><span id="active-source">Нет данных</span></div></div><div class="periods" role="group" aria-label="Период"><button data-days="7">7Д</button><button data-days="30">30Д</button><button data-days="90">90Д</button><button class="selected" data-days="0" title="Вся уже загруженная история; новый запрос не выполняется">Вся загрузка</button></div></section><p id="period-help" class="period-help" role="status"></p>
       <section class="metrics" aria-label="Показатели выбранного актива">
-        <article class="metric"><div class="metric-label">Последняя цена <span>↗</span></div><div class="metric-value" id="metric-price">—</div><div class="metric-note" id="metric-quote">В выбранном периоде</div></article>
+        <article class="metric"><div class="metric-label">Цена на конец периода <span>↗</span></div><div class="metric-value" id="metric-price">—</div><div class="metric-note" id="metric-quote">В выбранном периоде</div></article>
         <article class="metric"><div class="metric-label">Изменение за период <span>↗</span></div><div class="metric-value" id="metric-change">—</div><div class="metric-note" id="metric-start">От первой до последней цены</div></article>
         <article class="metric"><div class="metric-label">Макс. просадка <span>↘</span></div><div class="metric-value" id="metric-drawdown">—</div><div class="metric-note">От предшествующего пика</div></article>
         <article class="metric"><div class="metric-label">Наблюдений <span>◷</span></div><div class="metric-value" id="metric-count">—</div><div class="metric-note" id="metric-dates">UTC</div></article>
@@ -78,7 +83,7 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
   <dialog id="format-dialog"><div class="dialog-heading"><h2>Загрузите свою историю</h2><button class="icon-button" data-close="format-dialog" aria-label="Закрыть формат данных">×</button></div><p>Один актив в каждом UTF-8 CSV. Выберите несколько файлов, чтобы сравнить их.</p><pre>timestamp,symbol,price
 2026-01-01T00:00:00Z,SAMPLE/USD,100
 2026-01-02T00:00:00Z,SAMPLE/USD,105</pre><ul><li>Нужны ровно столбцы timestamp, symbol, price — в любом порядке.</li><li>Минимум две записи, уникальные даты с часовым поясом. Дробные секунды: до 3 знаков.</li><li>Цена от 1e-30 до 1e30. Один файл — одна пара, например BTC/USD.</li><li>До 5 МБ и 100 000 записей на файл; до 8 рядов одновременно.</li><li>Даты сортируются автоматически. Интервалы не заполняются вымышленными ценами.</li></ul><div class="dialog-note">Название пары не проверяет подлинность актива. Сохраните сведения о бирже, сети и контракте отдельно.</div><button id="template-download" class="button primary">↓ Скачать пример CSV</button></dialog>
-  <dialog id="export-dialog"><div class="dialog-heading"><h2>Сохранить исследование</h2><button class="icon-button" data-close="export-dialog" aria-label="Закрыть экспорт">×</button></div><p>Показатели и отфильтрованные наблюдения текущего исследования. Если включено сравнение — только общий период.</p><div class="export-options"><button data-export="markdown"><strong>Markdown <span>↗</span></strong><span>Читаемый отчёт с таблицей и источниками</span></button><button data-export="json"><strong>JSON <span>↗</span></strong><span>Статистика, даты, источники и SHA-256 файлов</span></button><button data-export="csv"><strong>CSV <span>↗</span></strong><span>Наблюдения выбранных рядов за текущий период</span></button><button data-export="svg"><strong>График SVG <span>↗</span></strong><span>Векторный график для заметок и публикаций</span></button></div><div class="dialog-note">Браузер считает с обычной числовой точностью JavaScript. Для десятичных расчётов используйте Python CLI.</div></dialog>
+  <dialog id="export-dialog"><div class="dialog-heading"><h2>Сохранить исследование</h2><button class="icon-button" data-close="export-dialog" aria-label="Закрыть экспорт">×</button></div><p>Показатели и отфильтрованные наблюдения текущего исследования. Если включено сравнение — только общий период. CSV экспортируется как таблица из пяти столбцов; для обратного импорта оставьте timestamp, symbol, price и один актив.</p><div class="export-options"><button data-export="markdown"><strong>Markdown <span>↗</span></strong><span>Читаемый отчёт с таблицей и источниками</span></button><button data-export="json"><strong>JSON <span>↗</span></strong><span>Статистика, даты, источники и SHA-256 файлов</span></button><button data-export="csv"><strong>CSV <span>↗</span></strong><span>Наблюдения выбранных рядов за текущий период</span></button><button data-export="svg"><strong>График SVG <span>↗</span></strong><span>Векторный график для заметок и публикаций</span></button></div><div class="dialog-note">Браузер считает с обычной числовой точностью JavaScript. Для десятичных расчётов используйте Python CLI.</div></dialog>
 <script>
 /* Pure analytics shared by the dashboard and Node tests. No network or DOM. */
 (function (root, factory) {
@@ -265,12 +270,16 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
     const timeout = options.timeoutMs ?? 20000;
     const cache = new Map(); let chain = Promise.resolve(), nextAt = 0, blockedUntil = 0, closed = false, active;
     const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
-    async function execute(path, params) {
-      if (closed) throw new APIError('Подключение отключено.', 'closed');
+    function requestURL(path, params) {
       const url = new URL(path, ROOT);
       for (const [name, value] of Object.entries(params)) url.searchParams.set(name, value);
+      return url;
+    }
+    async function execute(path, params, refresh) {
+      if (closed) throw new APIError('Подключение отключено.', 'closed');
+      const url = requestURL(path, params);
       const cached = cache.get(url.href);
-      if (cached && cached.expires > now()) return cached.data;
+      if (!refresh && cached && cached.expires > now()) return cached.data;
       if (blockedUntil > now()) throw new APIError('Лимит CoinGecko: подождите около минуты перед новым запросом.', 'rate');
       if (nextAt > now()) await pause(nextAt - now());
       if (closed) throw new APIError('Подключение отключено.', 'closed');
@@ -305,21 +314,26 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
         throw new APIError('Нет связи с CoinGecko. Проверьте интернет; возможна блокировка сети или CORS. CSV и деморежим доступны.', 'network');
       } finally { clearTimeout(timer); if (active === controller) active = null; }
     }
-    function request(path, params) {
-      const result = chain.catch(() => {}).then(() => execute(path, params)); chain = result; return result;
+    function request(path, params, refresh = false) {
+      const result = chain.catch(() => {}).then(() => execute(path, params, refresh)); chain = result; return result;
     }
     return {
-      async history(coin, days = 90) {
+      async history(coin, days = 90, { refresh = false } = {}) {
         validID(coin.id);
         if (![7, 30, 90, 365].includes(days)) throw new APIError('Выберите 7, 30, 90 или 365 дней истории.', 'input');
-        const data = await request('coins/' + encodeURIComponent(coin.id) + '/market_chart', { vs_currency: 'usd', days });
-        return normalizeHistory(data.payload, coin, days, data.fetchedAt);
+        const path = 'coins/' + encodeURIComponent(coin.id) + '/market_chart', params = { vs_currency: 'usd', days };
+        const data = await request(path, params, refresh);
+        try { return normalizeHistory(data.payload, coin, days, data.fetchedAt); }
+        catch (error) { cache.delete(requestURL(path, params).href); throw error; }
       },
       async search(query) {
         query = String(query).trim();
         if (query.length < 2 || query.length > 64) throw new APIError('Введите от 2 до 64 символов для поиска.', 'input');
         const { payload } = await request('search', { query });
-        if (!Array.isArray(payload.coins)) throw new APIError('Не удалось прочитать результаты поиска CoinGecko.', 'data');
+        if (!Array.isArray(payload.coins)) {
+          cache.delete(requestURL('search', { query }).href);
+          throw new APIError('Не удалось прочитать результаты поиска CoinGecko.', 'data');
+        }
         return payload.coins.filter(c => c && /^[a-z0-9][a-z0-9_-]{0,127}$/.test(c.id)).slice(0, 12)
           .map(c => ({ id: c.id, symbol: String(c.symbol || '').slice(0, 50), name: String(c.name || c.id).slice(0, 150), rank: c.market_cap_rank ?? null }));
       },
@@ -372,38 +386,46 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
     state.datasets.push(result); if (state.active === null) state.active = id;
   }
   function loadDemo() {
+    if (online.busy || importing) return;
     if (state.datasets.length + 3 > 8) { message('Для демонстрации нужны три свободных места. Удалите ненужные ряды.'); return; }
     A.demo().forEach(addDataset); render();
   }
   function renderOnline() {
+    const locked = online.busy || importing;
     $('cg-connect').textContent = online.client ? (online.verified ? 'CoinGecko подключён · настройки' : 'Ключ введён · настройки') : 'Подключить CoinGecko';
     $('cg-disconnect').hidden = !online.client;
-    $('cg-search-button').disabled = online.busy;
-    $('cg-refresh').disabled = online.busy || !online.client || !state.datasets.some(d => d.origin === 'coingecko' && d.selected);
-    $('cg-history').disabled = online.busy;
-    document.querySelectorAll('[data-coin], [data-add-coin]').forEach(b => { b.disabled = online.busy; });
+    $('cg-search-button').disabled = locked;
+    $('cg-refresh').disabled = locked || !online.client || !state.datasets.some(d => d.origin === 'coingecko' && d.selected);
+    $('cg-history').disabled = locked;
+    document.querySelectorAll('[data-coin], [data-add-coin]').forEach(b => { b.disabled = locked; });
     $('cg-status').textContent = online.status || (online.client ? 'Ключ действует до закрытия страницы · кэш 5 минут' : 'Ключ вводится один раз на открытую страницу');
     $('cg-status').classList.toggle('loading', online.busy);
-    $('cg-connect').disabled = online.busy;
-    $('cg-search').disabled = online.busy;
+    $('cg-connect').disabled = locked;
+    $('cg-search').disabled = locked;
+    $('cg-cancel').hidden = !online.busy;
+    $('csv-input').disabled = locked;
+    $('drop-zone').setAttribute('aria-disabled', String(locked));
+    $('demo-load').disabled = locked;
   }
   function openConnection() {
     $('cg-key-error').hidden = true;
     $('cg-dialog').showModal();
   }
-  async function loadCoins(coins, preserveActive = false) {
+  async function loadCoins(coins, preserveActive = false, refresh = false) {
     if (!online.client) { openConnection(); return; }
-    if (online.busy || !coins.length) return;
+    if (online.busy || importing || !coins.length) return;
     const client = online.client, generation = online.generation;
-    online.busy = true; let first = null, loaded = 0;
+    online.busy = true; let first = null, loaded = 0, failed = false;
+    const days = Number($('cg-history').value);
+    render();
     try {
       for (const coin of coins) {
         if (!state.datasets.some(d => d.origin === 'coingecko' && d.coinId === coin.id) && state.datasets.length >= 8) {
-          message('Нужно свободное место: удалите ненужный ряд. Максимум — 8 активов.'); break;
+          failed = true; message('Нужно свободное место: удалите ненужный ряд. Максимум — 8 активов.'); break;
         }
         online.status = `Загрузка ${coin.name || coin.id}…`; renderOnline();
         try {
-          const dataset = await client.history(coin, Number($('cg-history').value));
+          const dataset = await client.history(coin, days, { refresh });
           if (generation !== online.generation) return;
           let existing = state.datasets.find(d => d.origin === 'coingecko' && d.coinId === coin.id);
           if (existing) { Object.assign(existing, dataset); existing.selected = true; }
@@ -412,6 +434,7 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
           loaded++; online.verified = true;
         } catch (error) {
           if (generation !== online.generation || error.kind === 'closed') return;
+          failed = true;
           message((coin.name || coin.id) + ': ' + error.message);
           if (error.kind === 'auth') { client.disconnect(); online.client = null; online.verified = false; break; }
           if (error.kind === 'rate' || error.kind === 'network') break;
@@ -420,23 +443,24 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
       if (loaded) {
         state.datasets.filter(d => d.demo).forEach(d => { d.selected = false; });
         if (!preserveActive || !state.datasets.find(d => d.id === state.active && d.selected)) state.active = first;
-        state.days = 0;
-        online.status = `Загружено рядов: ${loaded}. Кэш ответов — 5 минут.`;
+        if (!preserveActive) state.days = 0;
+        online.status = failed ? `Обновлено ${loaded} из ${coins.length} рядов. Остальные не обновлены — проверьте их период и время загрузки.`
+          : `Загружено рядов: ${loaded}. История: ${days} дн. ${refresh ? 'Выполнен новый запрос.' : 'Ответы могут быть из кэша (5 минут).'}`;
       } else online.status = online.client ? 'Данные не обновлены. Проверьте сообщение об ошибке.' : '';
     } finally {
       if (generation === online.generation) { online.busy = false; render(); }
     }
   }
-  async function refreshCoins() {
+  async function refreshCoins(refresh = false) {
     const coins = selectedData().filter(d => d.origin === 'coingecko').map(d => ({ id: d.coinId, symbol: d.symbol.replace(/\/USD$/, ''), name: d.coinName }));
-    if (coins.length) await loadCoins(coins, true);
+    if (coins.length) await loadCoins(coins, true, refresh);
   }
   async function searchCoins(event) {
     event?.preventDefault();
     if (!online.client) { openConnection(); return; }
-    if (online.busy) return;
+    if (online.busy || importing) return;
     const client = online.client, generation = online.generation;
-    online.busy = true; online.status = 'Поиск в CoinGecko…'; renderOnline(); $('cg-results').replaceChildren();
+    online.busy = true; online.status = 'Поиск в CoinGecko…'; render(); $('cg-results').replaceChildren();
     try {
       const coins = await client.search($('cg-search').value);
       if (generation !== online.generation) return;
@@ -454,7 +478,7 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
       if (error.kind !== 'closed') message(error.message);
       if (error.kind === 'auth') { client.disconnect(); online.client = null; online.verified = false; }
       online.status = '';
-    } finally { if (generation === online.generation) { online.busy = false; renderOnline(); } }
+    } finally { if (generation === online.generation) { online.busy = false; render(); } }
   }
   function renderAssets() {
     $('assets').replaceChildren(); $('asset-count').textContent = state.datasets.length;
@@ -464,12 +488,14 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
       row.style.setProperty('--coin', d.color);
       const select = element('button', 'asset-select'); select.setAttribute('aria-label', `Выбрать ${d.label}`);
       select.setAttribute('aria-pressed', String(d.id === state.active));
+      select.disabled = online.busy || importing;
       select.append(element('span', 'asset-monogram', d.symbol[0]));
       const name = element('span'); const title = element('span', 'asset-name', d.label); title.title = d.label;
       name.append(title, element('span', 'asset-sub', (d.demo ? 'Демо · ' : '') + number.format(d.points.length) + ' точек')); select.append(name);
       select.onclick = () => { state.active = d.id; d.selected = true; render(); };
       const check = element('input', 'asset-check'); check.type = 'checkbox'; check.checked = d.selected;
       check.setAttribute('aria-label', `Сравнивать ${d.label}`);
+      check.disabled = online.busy || importing;
       check.onchange = () => {
         d.selected = check.checked;
         if (!d.selected && state.active === d.id) state.active = state.datasets.find(x => x.selected)?.id ?? null;
@@ -477,7 +503,7 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
         render();
       };
       const remove = element('button', 'asset-remove', '×'); remove.setAttribute('aria-label', `Удалить ${d.label}`);
-      remove.disabled = online.busy;
+      remove.disabled = online.busy || importing;
       remove.onclick = () => {
         state.datasets = state.datasets.filter(x => x.id !== d.id);
         if (state.active === d.id) state.active = state.datasets.find(x => x.selected)?.id ?? null;
@@ -511,7 +537,7 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
     $('active-symbol').textContent = active?.label || 'Выберите актив';
     $('active-icon').textContent = active?.symbol[0] || '+';
     $('active-icon').style.color = active?.color || colors[0];
-    $('active-source').textContent = active ? (active.demo ? 'Вымышленный ряд · ежедневные наблюдения' : active.origin === 'coingecko' ? active.source + ' · получено ' + longDate.format(active.fetchedAt) + ' UTC' : active.source) : 'Подключите CoinGecko или загрузите CSV';
+    $('active-source').textContent = active ? (active.demo ? 'Вымышленный ряд · ежедневные наблюдения' : active.origin === 'coingecko' ? active.source + ' · история ' + active.apiDays + ' дн. · получено ' + longDate.format(active.fetchedAt) + ' UTC' : active.source) : 'Подключите CoinGecko или загрузите CSV';
     $('active-source').title = active?.source || '';
     $('metric-price').textContent = metrics ? price(metrics.last) : '—';
     $('metric-quote').textContent = metrics ? `Мин. ${price(metrics.min)} · макс. ${price(metrics.max)}` : 'В выбранном периоде';
@@ -526,6 +552,13 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
     $('price-heading').textContent = state.mode === 'compare' ? 'Сравнение траекторий' : 'Динамика цены';
     $('chart-note').textContent = state.mode === 'compare' ? 'Первое наблюдение каждого ряда в общем периоде = 100.' : 'Цена выбранного актива в единицах исходной пары.';
     $('chart-range').textContent = windowed.series.length ? `${dateFormat.format(windowed.start)} — ${dateFormat.format(windowed.end)}` : 'Нет общего периода';
+    const available = state.mode === 'compare' ? selected : selected.slice(0, 1);
+    const from = available.length ? Math.max(...available.map(d => d.points[0].time)) : null;
+    const to = available.length ? Math.min(...available.map(d => d.points.at(-1).time)) : null;
+    $('period-help').textContent = !available.length ? 'Кнопки периода фильтруют загруженные наблюдения. Сначала добавьте данные.'
+      : from >= to ? 'У выбранных рядов нет общего периода. Оставьте совместимые ряды или выберите «Цена».'
+        : `${state.days ? 'Фильтр: последние ' + state.days + ' дн.' : 'Показана вся загруженная история.'} Доступно ${state.mode === 'compare' ? 'для сравнения' : 'для актива'}: ${dateFormat.format(from)} — ${dateFormat.format(to)}.` +
+          (available.some(d => d.origin === 'coingecko') ? ' Для более длинной истории выберите 365 дней в списке «История» выше. Это не история с момента запуска монеты.' : '');
     $('legend').replaceChildren();
     for (const d of windowed.series) { const item = element('span', 'legend-item'); const dot = element('i'); dot.style.background = d.color; item.append(dot, document.createTextNode(d.label)); $('legend').append(item); }
     const chartSeries = windowed.series.map(d => ({ ...d, points: d.points.map(p => ({ time: p.time, value: state.mode === 'compare' ? p.price / d.points[0].price * 100 : p.price })) }));
@@ -553,15 +586,17 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
   }
   function renderQuality(dataset, filteredMetrics) {
     const body = $('quality-body'); body.className = 'quality-body'; body.replaceChildren();
+    $('quality-dot').classList.remove('warning');
     if (!dataset) { body.append(element('p', 'quality-summary', 'Выберите актив для проверки.')); return; }
-    const all = A.stats(dataset.points); const m = filteredMetrics || all;
-    const warning = m.irregular > 0 || dataset.sorted;
+    if (!filteredMetrics) { body.append(element('p', 'quality-summary', 'В выбранном периоде недостаточно общих наблюдений. Измените период или состав сравнения.')); return; }
+    const all = A.stats(dataset.points); const m = filteredMetrics;
+    const warning = m.irregular > 0 || dataset.sorted || dataset.discarded > 0;
     $('quality-dot').classList.toggle('warning', warning);
     const rows = [
       ['Часовой пояс', 'UTC · проверен'],
       ['Медианный интервал', interval(m.medianInterval)],
       ['Интервалов > 1,5× медианы', String(m.gaps)],
-      ['Последняя запись файла', dateFormat.format(all.end)],
+      ['Последнее наблюдение', dateFormat.format(all.end)],
     ];
     for (const [label, value] of rows) { const row = element('div', 'quality-row'); row.append(element('span', '', label), element('strong', '', value)); body.append(row); }
     let note = m.irregular ? `Нерегулярных интервалов: ${m.irregular}. Самый длинный: ${interval(m.longestGap)}. ` : 'Интервалы равномерные. ';
@@ -644,7 +679,8 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
   let importing = false;
   async function importFiles(files) {
     if (importing) return;
-    importing = true; $('csv-input').disabled = true;
+    if (online.busy) { message('Дождитесь завершения загрузки CoinGecko или нажмите «Отменить загрузку».'); return; }
+    importing = true; render();
     const errors = []; let firstImported = null;
     try {
       for (const file of files) {
@@ -664,11 +700,11 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
         } catch (error) { errors.push(file.name + ': ' + error.message); }
       }
       if (firstImported !== null) {
-        state.datasets.forEach(d => { d.selected = !d.demo; });
+        state.datasets.filter(d => d.demo).forEach(d => { d.selected = false; });
         state.active = firstImported; state.days = 0;
       }
       render(); errors.forEach(message);
-    } finally { importing = false; $('csv-input').disabled = false; $('csv-input').value = ''; }
+    } finally { importing = false; $('csv-input').value = ''; render(); }
   }
   function download(content, type, filename) {
     const url = URL.createObjectURL(new Blob([content], { type }));
@@ -686,6 +722,7 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
         label: d.label, symbol: d.symbol, synthetic: !!d.demo, source: d.source, input_sha256: d.hash || null,
         provider: d.origin || (d.demo ? 'demo' : 'csv'), coin_id: d.coinId || null, source_url: d.sourceURL || null,
         fetched_at_utc: d.fetchedAt ? new Date(d.fetchedAt).toISOString() : null,
+        requested_history_days: d.apiDays || null, discarded_api_rows: d.discarded || 0,
         start_utc: new Date(m.start).toISOString(), end_utc: new Date(m.end).toISOString(), observations: m.count,
         first_price: m.first, last_price: m.last, sample_min: m.min, sample_max: m.max,
         change_pct: m.change, max_drawdown_pct: m.maxDrawdown,
@@ -769,8 +806,14 @@ dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radi
     $('cg-dialog').close(); $('cg-results').replaceChildren(); render();
   };
   $('cg-search-form').onsubmit = searchCoins;
-  $('cg-refresh').onclick = refreshCoins;
-  $('cg-history').onchange = () => { if (online.client) refreshCoins(); };
+  $('cg-refresh').onclick = () => refreshCoins(true);
+  $('cg-cancel').onclick = () => {
+    online.client?.disconnect(); online.client = null; online.verified = false;
+    online.generation++; online.busy = false;
+    online.status = 'Загрузка отменена, ключ очищен. Уже загруженные данные сохранены. Для новых запросов подключитесь снова.';
+    $('cg-key').value = ''; render();
+  };
+  $('cg-history').onchange = () => { if (online.client) { state.days = 0; refreshCoins(); } };
   document.querySelectorAll('[data-coin]').forEach(b => b.onclick = () => loadCoins([CG.DEFAULT_COINS.find(c => c.id === b.dataset.coin)]));
   $('format-open').onclick = () => $('format-dialog').showModal();
   $('export-open').onclick = () => $('export-dialog').showModal();
