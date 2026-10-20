@@ -1,9 +1,11 @@
 (function () {
   'use strict';
   const A = window.CryptoAnalytics;
+  const CG = window.CoinGeckoData;
   const $ = id => document.getElementById(id);
   const colors = ['#b4f272', '#8caaff', '#deabff', '#62dbbb', '#f3b572', '#f18cbd', '#76cdeb', '#e2df8a'];
   const state = { datasets: [], active: null, mode: 'compare', days: 0, serial: 0, current: null };
+  const online = { client: null, verified: false, busy: false, generation: 0, status: '' };
   const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
   const dateFormat = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
   const shortDate = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'short', timeZone: 'UTC' });
@@ -40,6 +42,87 @@
     if (state.datasets.length + 3 > 8) { message('Для демонстрации нужны три свободных места. Удалите ненужные ряды.'); return; }
     A.demo().forEach(addDataset); render();
   }
+  function renderOnline() {
+    $('cg-connect').textContent = online.client ? (online.verified ? 'CoinGecko подключён · настройки' : 'Ключ введён · настройки') : 'Подключить CoinGecko';
+    $('cg-disconnect').hidden = !online.client;
+    $('cg-search-button').disabled = online.busy;
+    $('cg-refresh').disabled = online.busy || !online.client || !state.datasets.some(d => d.origin === 'coingecko' && d.selected);
+    $('cg-history').disabled = online.busy;
+    document.querySelectorAll('[data-coin], [data-add-coin]').forEach(b => { b.disabled = online.busy; });
+    $('cg-status').textContent = online.status || (online.client ? 'Ключ действует до закрытия страницы · кэш 5 минут' : 'Ключ вводится один раз на открытую страницу');
+    $('cg-status').classList.toggle('loading', online.busy);
+    $('cg-connect').disabled = online.busy;
+    $('cg-search').disabled = online.busy;
+  }
+  function openConnection() {
+    $('cg-key-error').hidden = true;
+    $('cg-dialog').showModal();
+  }
+  async function loadCoins(coins, preserveActive = false) {
+    if (!online.client) { openConnection(); return; }
+    if (online.busy || !coins.length) return;
+    const client = online.client, generation = online.generation;
+    online.busy = true; let first = null, loaded = 0;
+    try {
+      for (const coin of coins) {
+        if (!state.datasets.some(d => d.origin === 'coingecko' && d.coinId === coin.id) && state.datasets.length >= 8) {
+          message('Нужно свободное место: удалите ненужный ряд. Максимум — 8 активов.'); break;
+        }
+        online.status = `Загрузка ${coin.name || coin.id}…`; renderOnline();
+        try {
+          const dataset = await client.history(coin, Number($('cg-history').value));
+          if (generation !== online.generation) return;
+          let existing = state.datasets.find(d => d.origin === 'coingecko' && d.coinId === coin.id);
+          if (existing) { Object.assign(existing, dataset); existing.selected = true; }
+          else { addDataset(dataset); existing = state.datasets.at(-1); }
+          if (first === null) first = existing.id;
+          loaded++; online.verified = true;
+        } catch (error) {
+          if (generation !== online.generation || error.kind === 'closed') return;
+          message((coin.name || coin.id) + ': ' + error.message);
+          if (error.kind === 'auth') { client.disconnect(); online.client = null; online.verified = false; break; }
+          if (error.kind === 'rate' || error.kind === 'network') break;
+        }
+      }
+      if (loaded) {
+        state.datasets.filter(d => d.demo).forEach(d => { d.selected = false; });
+        if (!preserveActive || !state.datasets.find(d => d.id === state.active && d.selected)) state.active = first;
+        state.days = 0;
+        online.status = `Загружено рядов: ${loaded}. Кэш ответов — 5 минут.`;
+      } else online.status = online.client ? 'Данные не обновлены. Проверьте сообщение об ошибке.' : '';
+    } finally {
+      if (generation === online.generation) { online.busy = false; render(); }
+    }
+  }
+  async function refreshCoins() {
+    const coins = selectedData().filter(d => d.origin === 'coingecko').map(d => ({ id: d.coinId, symbol: d.symbol.replace(/\/USD$/, ''), name: d.coinName }));
+    if (coins.length) await loadCoins(coins, true);
+  }
+  async function searchCoins(event) {
+    event?.preventDefault();
+    if (!online.client) { openConnection(); return; }
+    if (online.busy) return;
+    const client = online.client, generation = online.generation;
+    online.busy = true; online.status = 'Поиск в CoinGecko…'; renderOnline(); $('cg-results').replaceChildren();
+    try {
+      const coins = await client.search($('cg-search').value);
+      if (generation !== online.generation) return;
+      if (!coins.length) $('cg-results').append(element('p', 'search-empty', 'Монеты не найдены. Попробуйте название или другой тикер.'));
+      for (const coin of coins) {
+        const row = element('div', 'search-result'); const text = element('div');
+        text.append(element('strong', '', coin.name + ' · ' + coin.symbol.toUpperCase()), element('span', '', 'CoinGecko ID: ' + coin.id + (coin.rank ? ' · #' + coin.rank : '')));
+        const button = element('button', 'button secondary', 'Добавить'); button.dataset.addCoin = coin.id;
+        button.setAttribute('aria-label', 'Добавить ' + coin.name); button.onclick = () => loadCoins([coin]);
+        row.append(text, button); $('cg-results').append(row);
+      }
+      online.status = `Найдено: ${coins.length}. Проверяйте CoinGecko ID перед выбором.`;
+    } catch (error) {
+      if (generation !== online.generation) return;
+      if (error.kind !== 'closed') message(error.message);
+      if (error.kind === 'auth') { client.disconnect(); online.client = null; online.verified = false; }
+      online.status = '';
+    } finally { if (generation === online.generation) { online.busy = false; renderOnline(); } }
+  }
   function renderAssets() {
     $('assets').replaceChildren(); $('asset-count').textContent = state.datasets.length;
     if (!state.datasets.length) $('assets').append(element('p', 'empty-assets', 'Добавьте первый набор данных.'));
@@ -61,6 +144,7 @@
         render();
       };
       const remove = element('button', 'asset-remove', '×'); remove.setAttribute('aria-label', `Удалить ${d.label}`);
+      remove.disabled = online.busy;
       remove.onclick = () => {
         state.datasets = state.datasets.filter(x => x.id !== d.id);
         if (state.active === d.id) state.active = state.datasets.find(x => x.selected)?.id ?? null;
@@ -75,6 +159,7 @@
     return [active, ...state.datasets.filter(d => d.selected && d.id !== active.id)];
   }
   function render() {
+    renderOnline();
     renderAssets();
     document.querySelectorAll('[data-days]').forEach(b => { const active = +b.dataset.days === state.days; b.classList.toggle('selected', active); b.setAttribute('aria-pressed', active); });
     document.querySelectorAll('[data-mode]').forEach(b => { const active = b.dataset.mode === state.mode; b.classList.toggle('selected', active); b.setAttribute('aria-pressed', active); });
@@ -83,15 +168,17 @@
     state.current = windowed;
     const active = selected[0]; const points = windowed.series[0]?.points || [];
     const metrics = A.stats(points);
-    const hasDemo = state.datasets.some(d => d.demo);
+    const hasDemo = selected.some(d => d.demo);
     $('notice').classList.toggle('real', !hasDemo);
     $('notice-text').textContent = hasDemo
       ? 'Демонстрационные ALPHA, BETA и GAMMA — вымышленные активы. Это пример работы панели, не реальные котировки.'
-      : 'Файлы обрабатываются локально и не сохраняются после закрытия страницы. Вы смотрите загруженную историю, не live-котировки.';
+      : selected.some(d => d.origin === 'coingecko') ? 'Реальная история CoinGecko в USD. Это снимок на момент загрузки; обновление — по кнопке. Цены могут запаздывать.'
+        : state.datasets.length ? 'CSV обрабатываются локально и не сохраняются после закрытия страницы. Вы смотрите загруженную историю.'
+        : 'Начните с CoinGecko: подключите ключ и загрузите реальные BTC, ETH и SOL. CSV и деморежим доступны отдельно.';
     $('active-symbol').textContent = active?.label || 'Выберите актив';
     $('active-icon').textContent = active?.symbol[0] || '+';
     $('active-icon').style.color = active?.color || colors[0];
-    $('active-source').textContent = active ? (active.demo ? 'Вымышленный ряд · ежедневные наблюдения' : active.source) : 'Загрузите CSV или выберите ряд в списке';
+    $('active-source').textContent = active ? (active.demo ? 'Вымышленный ряд · ежедневные наблюдения' : active.origin === 'coingecko' ? active.source + ' · получено ' + longDate.format(active.fetchedAt) + ' UTC' : active.source) : 'Подключите CoinGecko или загрузите CSV';
     $('active-source').title = active?.source || '';
     $('metric-price').textContent = metrics ? price(metrics.last) : '—';
     $('metric-quote').textContent = metrics ? `Мин. ${price(metrics.min)} · макс. ${price(metrics.max)}` : 'В выбранном периоде';
@@ -148,6 +235,7 @@
     if (dataset.sorted) note += 'Строки автоматически отсортированы. ';
     note += 'Пропуски оцениваются по интервалам, а не по расписанию источника. Подлинность и полнота данных не проверены.';
     body.append(element('p', 'quality-summary' + (warning ? ' warning' : ''), note));
+    if (dataset.origin === 'coingecko') body.append(element('p', 'quality-summary', 'Источник: CoinGecko ID ' + dataset.coinId + '. Отброшено некорректных / повторных записей API: ' + dataset.discarded + '.'));
   }
   function drawChart(container, series, options) {
     container.replaceChildren();
@@ -259,9 +347,12 @@
     return { title: 'Crypto Research Toolkit', generated_at_utc: new Date().toISOString(), mode: state.mode,
       period: { start_utc: new Date(state.current.start).toISOString(), end_utc: new Date(state.current.end).toISOString() },
       notes: ['Saved observations, not live prices. Demo series are fictional.', 'Browser calculations use JavaScript floating-point numbers.',
-        'Drawdown resets at the selected period start. No liquidity, safety, or future-return assessment.', 'Gap detection is a heuristic using 1.5 times the median interval.'],
+        'Drawdown resets at the selected period start. No liquidity, safety, or future-return assessment.', 'Gap detection is a heuristic using 1.5 times the median interval.',
+        ...(state.current.series.some(d => d.origin === 'coingecko') ? ['Market data provided by CoinGecko: https://www.coingecko.com/en/api'] : [])],
       series: state.current.series.map(d => { const m = A.stats(d.points); return {
         label: d.label, symbol: d.symbol, synthetic: !!d.demo, source: d.source, input_sha256: d.hash || null,
+        provider: d.origin || (d.demo ? 'demo' : 'csv'), coin_id: d.coinId || null, source_url: d.sourceURL || null,
+        fetched_at_utc: d.fetchedAt ? new Date(d.fetchedAt).toISOString() : null,
         start_utc: new Date(m.start).toISOString(), end_utc: new Date(m.end).toISOString(), observations: m.count,
         first_price: m.first, last_price: m.last, sample_min: m.min, sample_max: m.max,
         change_pct: m.change, max_drawdown_pct: m.maxDrawdown,
@@ -277,7 +368,7 @@
         '| Series | Synthetic | First | Last | Change (%) | Max drawdown (%) | Observations |', '| --- | --- | --- | --- | --- | --- | --- |'];
       for (const s of report.series) rows.push(`| ${markdownEscape(s.label)} | ${s.synthetic ? 'YES' : 'No'} | ${s.first_price} | ${s.last_price} | ${s.change_pct.toFixed(6)} | ${s.max_drawdown_pct.toFixed(6)} | ${s.observations} |`);
       rows.push('', '## Sources', '');
-      for (const s of report.series) rows.push(`- ${markdownEscape(s.label)}: ${markdownEscape(s.source)}; SHA-256: ${s.input_sha256 || 'unavailable / demo'}; actual UTC range: ${s.start_utc} — ${s.end_utc}; long intervals: ${s.quality.long_intervals}.`);
+      for (const s of report.series) rows.push(`- ${markdownEscape(s.label)}: ${markdownEscape(s.source)}; SHA-256: ${s.input_sha256 || 'not applicable / unavailable'}; actual UTC range: ${s.start_utc} — ${s.end_utc}; long intervals: ${s.quality.long_intervals}.` + (s.source_url ? ` Source: ${s.source_url}; fetched: ${s.fetched_at_utc}.` : ''));
       rows.push('', '## Limitations', '', ...report.notes.map(n => '- ' + n), '');
       download(rows.join('\n'), 'text/markdown;charset=utf-8', 'crypto-research-report.md');
     }
@@ -305,7 +396,12 @@
           svg.append(svgNode('text', { x: 18, y: height + 79 + legendLine++ * 14, fill: state.current.series[i].color, 'font-family': 'Arial,sans-serif', 'font-size': 10 }, label.slice(pos, pos + lineLength)));
         }
       });
-      const finalHeight = height + 110 + legendLine * 14; svg.setAttribute('height', finalHeight); svg.setAttribute('viewBox', `0 0 ${width} ${finalHeight}`);
+      const credited = report.series.some(s => s.provider === 'coingecko');
+      const finalHeight = height + 110 + legendLine * 14 + (credited ? 15 : 0); svg.setAttribute('height', finalHeight); svg.setAttribute('viewBox', `0 0 ${width} ${finalHeight}`);
+      if (credited) {
+        const credit = svgNode('a', { href: 'https://www.coingecko.com/en/api' });
+        credit.append(svgNode('text', { x: 18, y: finalHeight - 27, fill: '#a4b69d', 'font-family': 'Arial,sans-serif', 'font-size': 9 }, 'Market data provided by CoinGecko')); svg.append(credit);
+      }
       svg.append(svgNode('text', { x: 18, y: finalHeight - 12, fill: '#73808d', 'font-family': 'Arial,sans-serif', 'font-size': 9 }, 'Saved observations. No forecast. Sampled rendering; metrics use all observations.'));
       download(new XMLSerializer().serializeToString(svg), 'image/svg+xml;charset=utf-8', 'crypto-research-chart.svg');
     }
@@ -322,11 +418,32 @@
   // Keep an accidentally dropped CSV from navigating away from the current research.
   window.addEventListener('dragover', e => e.preventDefault()); window.addEventListener('drop', e => e.preventDefault());
   $('demo-load').onclick = loadDemo;
+  $('cg-connect').onclick = openConnection;
+  $('cg-dialog').addEventListener('close', () => { $('cg-key').value = ''; });
+  $('cg-key-form').onsubmit = async event => {
+    event.preventDefault();
+    try {
+      const client = CG.createClient($('cg-key').value);
+      online.client?.disconnect(); online.generation++; online.client = client;
+      online.verified = false; online.busy = false; online.status = '';
+      $('cg-key').value = ''; $('cg-dialog').close();
+      await loadCoins(CG.DEFAULT_COINS);
+    } catch (error) { $('cg-key-error').hidden = false; $('cg-key-error').textContent = error.message; }
+  };
+  $('cg-disconnect').onclick = () => {
+    online.client?.disconnect(); online.client = null; online.verified = false;
+    online.generation++; online.busy = false; online.status = ''; $('cg-key').value = '';
+    $('cg-dialog').close(); $('cg-results').replaceChildren(); render();
+  };
+  $('cg-search-form').onsubmit = searchCoins;
+  $('cg-refresh').onclick = refreshCoins;
+  $('cg-history').onchange = () => { if (online.client) refreshCoins(); };
+  document.querySelectorAll('[data-coin]').forEach(b => b.onclick = () => loadCoins([CG.DEFAULT_COINS.find(c => c.id === b.dataset.coin)]));
   $('format-open').onclick = () => $('format-dialog').showModal();
   $('export-open').onclick = () => $('export-dialog').showModal();
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => $(b.dataset.close).close());
   document.querySelectorAll('[data-export]').forEach(b => b.onclick = () => exportReport(b.dataset.export));
   $('template-download').onclick = () => download('timestamp,symbol,price\r\n2026-01-01T00:00:00Z,SAMPLE/USD,100\r\n2026-01-02T00:00:00Z,SAMPLE/USD,120\r\n2026-01-03T00:00:00Z,SAMPLE/USD,90\r\n2026-01-04T00:00:00Z,SAMPLE/USD,110\r\n2026-01-05T00:00:00Z,SAMPLE/USD,80\r\n2026-01-06T00:00:00Z,SAMPLE/USD,105\r\n', 'text/csv;charset=utf-8', 'sample_prices.csv');
   let resizeTimer; window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 100); });
-  loadDemo();
+  render();
 })();
