@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Локальная панель для исследования ценовых CSV: графики, просадки, сравнение и качество данных.">
+  <title>Crypto Research Toolkit — локальная панель</title>
+  <style>
+@charset "UTF-8";
+:root{color-scheme:dark;--bg:#0b0d10;--surface:#111418;--raised:#171b20;--line:#242a30;--text:#edf2f5;--muted:#929da8;--dim:#636f7b;--accent:#b4f272;--mint:#62dbbb;--red:#ff8d94;--blue:#8caaff;--radius:15px;font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:14px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);line-height:1.5}button,input{font:inherit}button,a,label{-webkit-tap-highlight-color:transparent}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}a{color:inherit}button:focus-visible,a:focus-visible,label:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:4px}button{color:inherit}button:focus:not(:focus-visible){outline:none}button,input{border-radius:8px}svg{display:block}button{border:0}::selection{background:#b4f27244;color:white}.skip{position:fixed;left:15px;top:-80px;z-index:50;background:var(--accent);color:#10170a;padding:12px}.skip:focus{top:12px}
+.sidebar{position:fixed;inset:0 auto 0 0;width:248px;background:#0f1215;border-right:1px solid var(--line);padding:32px 22px 22px;display:flex;flex-direction:column;overflow-y:auto;z-index:10}.brand{display:flex;gap:13px;align-items:center;text-decoration:none;font-size:16px;font-weight:750;letter-spacing:1.5px}.brand-mark{position:relative;background:var(--accent);color:#15210d;display:grid;place-items:center;width:43px;height:43px;border-radius:12px;font-size:25px;font-weight:800;letter-spacing:-2px}.brand-mark span{position:absolute;right:3px;top:0;font-size:14px;letter-spacing:0}.brand-sub{display:block;font-size:8px;color:var(--muted);letter-spacing:1.8px;margin-top:2px}.sidebar-rule{height:1px;background:var(--line);margin:30px 0 28px;flex-shrink:0}.workspace-label,.section-label{font-size:9px;letter-spacing:1.5px;color:var(--dim);font-weight:700;display:flex;justify-content:space-between;align-items:center}.workspace-label{font-size:8px;margin-bottom:15px}.workspace-label span,.section-label span{font-size:10px;letter-spacing:0;background:var(--raised);padding:1px 6px;border-radius:4px}.nav-item{width:100%;display:flex;align-items:center;gap:12px;padding:11px 12px;background:transparent;border-radius:8px;text-decoration:none;font-size:12px;color:var(--muted);text-align:left}.nav-item>span:first-child{font-size:19px;line-height:20px}.nav-item.active{color:var(--accent);background:#b4f2720f}.nav-item:hover{background:#ffffff08}.nav-dot{margin-left:auto;width:5px;height:5px;background:var(--accent);border-radius:50%}.nav-arrow{margin-left:auto}.section-label{margin-top:34px}.sidebar-hint{font-size:10px;color:var(--dim);line-height:1.6;margin:10px 0 12px}.asset-list{display:grid;gap:7px}.asset-row{display:flex;align-items:center;border:1px solid transparent;border-radius:9px;gap:4px;padding-right:5px}.asset-row.current{background:var(--raised);border-color:#343d45}.asset-select{padding:10px 5px 10px 9px;display:flex;align-items:center;gap:9px;flex:1;min-width:0;text-align:left;background:transparent}.asset-monogram{display:grid;place-items:center;flex-shrink:0;width:29px;height:29px;border-radius:50%;background:color-mix(in srgb,var(--coin) 13%,transparent);color:var(--coin);font-size:13px;font-weight:700}.asset-name{font-size:12px;font-weight:650;display:block;overflow:hidden;text-overflow:ellipsis;max-width:94px}.asset-sub{font-size:9px;color:var(--dim);display:block}.asset-check{accent-color:var(--accent);width:13px;height:13px;cursor:pointer;margin:4px}.asset-remove{background:transparent;color:var(--dim);padding:0 3px;font-size:16px}.asset-remove:hover{color:var(--red)}.upload-box{border:1px dashed #3a424b;display:flex;align-items:center;flex-direction:column;text-align:center;padding:17px 10px;margin:20px 0 7px;border-radius:10px;cursor:pointer;transition:.2s}.upload-box:hover,.upload-box.dragging{border-color:var(--accent);background:#b4f27208}.upload-plus{color:var(--accent);font-size:24px;line-height:27px}.upload-box strong{font-size:11px;margin:4px 0}.upload-box>span:last-child{font-size:9px;color:var(--dim);line-height:1.7}.text-button{background:transparent;color:var(--muted);font-size:10px;padding:8px;align-self:center}.text-button:hover{color:var(--accent)}.sidebar-bottom{margin-top:auto;padding-top:32px;color:var(--muted);font-size:10px}.privacy-icon{font-size:19px;color:var(--accent);margin-bottom:6px}.sidebar-bottom strong{color:#c4ccd4;font-size:11px}.sidebar-bottom p{font-size:10px;line-height:1.8;color:var(--dim)}.version{display:flex;justify-content:space-between;font-size:8px;letter-spacing:1.5px;border-top:1px solid var(--line);padding-top:14px;margin-top:18px}.version span{letter-spacing:0}
+.workspace{margin-left:248px}.topbar{height:77px;display:flex;justify-content:space-between;align-items:center;padding:0 44px;border-bottom:1px solid var(--line);font-size:11px}.breadcrumb{color:var(--dim);display:flex;gap:15px}.breadcrumb strong{font-weight:500;color:#c5cdd3}.topbar-right{display:flex;align-items:center;gap:24px}.local-badge{color:#b4c6b2;font-size:10px}.local-badge i{display:inline-block;width:5px;height:5px;background:var(--accent);border-radius:50%;margin-right:6px;box-shadow:0 0 8px #b4f27238}.github-link{color:var(--muted);text-decoration:none;font-size:11px}.github-link:hover{color:white}main{padding:36px 44px 20px;max-width:1600px;margin:auto}.page-heading{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:25px}.eyebrow{font-size:9px;letter-spacing:2px;font-weight:600;color:var(--muted)}h1{font-size:clamp(25px,2.5vw,38px);letter-spacing:-1.3px;font-weight:600;line-height:1.3;margin:8px 0 9px}h1>span{color:var(--accent)}.page-heading p{margin:0;color:var(--muted);font-size:12px}.button{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:11px 16px;font-size:11px;font-weight:600;border-radius:8px;white-space:nowrap}.secondary{background:#181e24;border:1px solid #343e47;color:#d2dce5}.secondary:hover{background:#242c34}.primary{background:var(--accent);color:#19270e}.primary:hover{background:#c9ff90}.notice{display:flex;align-items:center;gap:10px;padding:11px 15px;background:#b4f27207;border:1px solid #b4f2721f;border-radius:8px;font-size:10px;color:#b6c5ae;margin-bottom:27px}.notice-dot{width:6px;height:6px;background:var(--accent);border-radius:50%;flex-shrink:0}.notice.real{background:#8caaff08;border-color:#8caaff29;color:#abbddc}.notice.real .notice-dot{background:var(--blue)}.messages{font-size:11px}.message{padding:12px 15px;border:1px solid #ff8d9440;background:#ff8d940b;border-radius:8px;margin-bottom:14px;color:#ffb8bc;display:flex;justify-content:space-between;gap:15px;white-space:pre-line}.message button{background:transparent;font-size:17px}.research-toolbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:21px}.active-title{display:flex;align-items:center;gap:12px}.coin-icon{background:#b4f27215;color:var(--accent);display:grid;place-items:center;width:41px;height:41px;border-radius:50%;font-size:19px;font-weight:650}h2{margin:0;font-weight:550;font-size:16px;letter-spacing:-.3px}.active-title h2{font-size:18px;letter-spacing:-.3px}.active-title div>span{font-size:10px;color:var(--muted)}.periods{display:flex;gap:4px;background:#11161a;padding:4px;border:1px solid var(--line);border-radius:8px}.periods button{font-size:10px;background:transparent;color:var(--muted);padding:5px 12px;border-radius:5px}.periods button.selected{background:#293324;color:var(--accent)}.periods button:hover{color:white}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:23px}.metric{padding:18px 19px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}.metric-label{font-size:10px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}.metric-label>span{color:var(--dim);font-size:15px}.metric-value{font-size:clamp(21px,2.25vw,33px);font-weight:550;letter-spacing:-.8px;margin:10px 0 5px;line-height:1.35;font-variant-numeric:tabular-nums}.metric-note{font-size:9px;color:var(--dim);min-height:14px}.positive{color:var(--accent)}.negative{color:var(--red)}.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}.panel-heading{padding:21px 23px 17px;display:flex;align-items:center;justify-content:space-between;gap:12px}.section-kicker{font-size:8px;font-weight:650;letter-spacing:1.5px;color:var(--dim);margin-bottom:6px}.segmented{display:flex;gap:3px;border:1px solid var(--line);border-radius:7px;padding:3px}.segmented button{background:transparent;font-size:10px;color:var(--muted);padding:6px 11px;border-radius:5px}.segmented button.selected{color:#d9e8d0;background:#263222}.chart-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 23px 7px;font-size:9px;color:var(--dim)}.legend{display:flex;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:10px}.legend-item{display:flex;gap:6px;align-items:center}.legend-item i{width:6px;height:6px;border-radius:50%}.chart-wrap{height:264px;margin:0 14px;position:relative;touch-action:pan-y}.chart-wrap svg{width:100%;height:100%;overflow:visible}.chart-wrap svg text{font-family:inherit;font-size:10px;fill:#73808d}.chart-wrap svg .gridline{stroke:#242b31;stroke-dasharray:3 5;stroke-width:1}.chart-footnote{border-top:1px solid #20262c;margin:0 23px;padding:12px 0 14px;display:flex;justify-content:space-between;gap:15px;font-size:9px;color:var(--dim)}.chart-empty{height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;text-align:center;padding:25px}.chart-tooltip{position:absolute;top:20px;z-index:3;pointer-events:none;background:#1b232bf5;border:1px solid #424f5c;border-radius:9px;min-width:160px;padding:11px 13px;box-shadow:0 12px 25px #0004;font-size:10px;color:#e7eef3}.chart-tooltip time{font-size:9px;color:#95a3b1;display:block;margin-bottom:6px}.tooltip-row{display:flex;justify-content:space-between;gap:17px;margin:4px 0}.tooltip-sample{font-size:8px;color:var(--dim);display:block;margin-bottom:7px}.lower-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:19px;margin-top:19px}.drawdown-panel .chart-wrap{height:159px}.panel-caption{font-size:9px;color:var(--dim);margin:2px 23px 17px}.small-badge{border:1px solid #343f48;color:#a5b1bb;background:#ffffff03;padding:4px 8px;border-radius:5px;font-size:9px;white-space:nowrap}.quality-dot{width:7px;height:7px;background:var(--accent);border-radius:50%;box-shadow:0 0 10px #b4f2721c}.quality-dot.warning{background:#edc379}.quality-body{padding:0 23px 19px}.quality-row{display:flex;justify-content:space-between;gap:13px;font-size:10px;padding:9px 0;border-bottom:1px solid #232a30;color:var(--muted)}.quality-row strong{font-weight:450;color:#d3dbe1;text-align:right}.quality-row:last-child{border-bottom:0}.quality-summary{font-size:9px;color:var(--dim);padding:10px 0 0;line-height:1.6}.quality-summary.warning{color:#d4b985}.comparison-panel{margin-top:19px}.comparison-panel .panel-heading{padding-bottom:17px}.table-scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:11px;text-align:left;white-space:nowrap}th{font-size:9px;color:var(--dim);font-weight:500;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:11px 23px;background:#ffffff01}td{padding:15px 23px;border-bottom:1px solid #20262c;font-variant-numeric:tabular-nums;color:#c2cdd6}tbody tr:last-child td{border-bottom:0}td:first-child{font-weight:550;color:#e5ebef}td:first-child i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:9px}td:last-child{font-size:9px;color:var(--muted)}.page-footer{display:flex;justify-content:space-between;gap:20px;padding:22px 0 0;color:var(--dim);font-size:8px;letter-spacing:.7px}.page-footer p{margin:0;font-size:8px;letter-spacing:0}.footer-divider{margin:0 8px;color:#3d4b56}
+dialog{background:#151b21;color:var(--text);border:1px solid #35404b;border-radius:16px;padding:25px;max-width:600px;width:calc(100% - 32px);max-height:90vh;overflow:auto;box-shadow:0 30px 100px #0009}dialog::backdrop{background:#05090bd9;backdrop-filter:blur(4px)}.dialog-heading{display:flex;justify-content:space-between;align-items:center;gap:15px}.dialog-heading h2{font-size:21px}.icon-button{background:transparent;color:var(--muted);font-size:25px;padding:2px 8px}dialog p,dialog li{color:var(--muted);font-size:12px;line-height:1.8}dialog ul{padding-left:18px}pre{font-size:11px;padding:15px;overflow:auto;background:#0b1117;border:1px solid var(--line);border-radius:8px;line-height:1.8;color:#c8e8b1}.dialog-note{font-size:10px;color:var(--dim);padding:13px;background:#ffffff03;border-radius:8px;line-height:1.7;margin:18px 0}.export-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}.export-options button{background:#1c242c;border:1px solid #35404b;padding:17px;text-align:left;display:grid;gap:7px;border-radius:10px}.export-options button:hover{border-color:var(--accent)}.export-options strong{display:flex;justify-content:space-between;font-size:13px;font-weight:500}.export-options strong span{color:var(--accent)}.export-options button>span{font-size:10px;color:var(--muted);line-height:1.7}.empty-assets{font-size:11px;color:var(--muted);padding:15px 8px}
+@media(min-width:1600px){.chart-wrap{height:300px}.drawdown-panel .chart-wrap{height:180px}.metric{padding:22px}.sidebar{width:260px}.workspace{margin-left:260px}}
+@media(max-width:1150px){.sidebar{width:218px;padding:25px 17px}.workspace{margin-left:218px}main{padding:28px 25px 20px}.topbar{padding:0 25px}.metric{padding:15px 14px}.metric-label{font-size:9px}.metric-note{font-size:8px}.metrics{gap:10px}.page-heading h1{font-size:29px}.lower-grid{grid-template-columns:1.25fr 1fr}.panel-heading{padding:18px 18px 15px}.chart-meta{padding-left:18px;padding-right:18px}th,td{padding-left:18px;padding-right:18px}.quality-body{padding:0 18px 14px}}
+@media(max-width:850px){.sidebar{position:static;width:auto;border-right:0;border-bottom:1px solid var(--line);display:block;padding:18px 20px}.brand{font-size:13px}.brand-mark{width:36px;height:36px;font-size:23px}.brand-sub{font-size:7px}.sidebar-rule,.workspace-label,.nav-item,.section-label,.sidebar-hint,.sidebar-bottom{display:none}.asset-list{margin:16px 0 12px;display:flex;flex-wrap:wrap;gap:7px}.asset-row{max-width:210px;background:#141a1f}.asset-select{padding:8px}.asset-monogram{width:25px;height:25px;font-size:12px}.asset-name{max-width:100px}.asset-sub{font-size:8px}.upload-box{display:inline-flex;padding:8px 13px;flex-direction:row;gap:9px;margin:0 12px 0 0}.upload-box>span:last-child{display:none}.upload-plus{font-size:17px;line-height:20px}.upload-box strong{margin:0}.text-button{display:inline-block}.workspace{margin-left:0}.topbar{height:54px}.topbar-right{gap:15px}.page-heading{align-items:flex-start}.eyebrow{font-size:8px}.page-heading h1{font-size:28px}.page-heading p{font-size:11px}.metric-value{font-size:26px}.metrics{grid-template-columns:1fr 1fr}.lower-grid{grid-template-columns:1fr 1fr}.chart-wrap{height:240px}.page-footer{flex-direction:column;gap:8px}.quality-row{font-size:9px}.quality-summary{font-size:8px}.active-title h2{font-size:16px}}
+@media(max-width:560px){main{padding:25px 16px 18px}.topbar{padding:0 18px}.breadcrumb{font-size:10px;gap:8px}.github-link{font-size:10px}.local-badge{font-size:9px}.topbar-right{gap:11px}.page-heading{display:block;margin-bottom:18px}.page-heading .button{margin-top:18px;padding:9px 13px}.eyebrow{font-size:7px;letter-spacing:1.5px}.page-heading h1{font-size:29px}.notice{font-size:9px;line-height:1.7;margin-bottom:20px;padding:10px 12px}.research-toolbar{align-items:flex-start;gap:10px;flex-direction:column}.periods{align-self:flex-end;margin-top:-3px}.active-title div>span{font-size:9px}.metrics{gap:9px;margin-bottom:16px}.metric{padding:14px}.metric-value{font-size:26px}.metric-label{font-size:9px}.metric-note{font-size:8px}.panel-heading{padding:17px 15px 13px;align-items:flex-start}.main-chart-panel .panel-heading{display:block}.segmented{margin-top:14px;display:inline-flex}.section-kicker{font-size:7px;letter-spacing:1.2px}h2{font-size:15px}.chart-meta{padding:0 15px 6px;align-items:flex-start;flex-direction:column;gap:6px}.chart-wrap{margin:0 7px;height:230px}.chart-wrap svg text{font-size:10px}.chart-footnote{margin:0 15px;font-size:8px;gap:12px}.chart-footnote>span:first-child{max-width:230px}.lower-grid{grid-template-columns:1fr;gap:16px;margin-top:16px}.drawdown-panel .chart-wrap{height:150px}.quality-body{padding:0 15px 14px}.quality-row{font-size:11px}.quality-summary{font-size:10px}.comparison-panel{margin-top:16px}.comparison-panel .small-badge{margin-top:7px}th,td{padding:12px 15px}.export-options{grid-template-columns:1fr}.page-footer{font-size:7px;line-height:1.8}.chart-tooltip{min-width:135px;font-size:9px}.asset-list{gap:5px}.asset-row{max-width:100%;flex:1 1 140px}.asset-select{padding:7px}.asset-name{font-size:11px}.asset-remove{padding:0 5px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+</style>
+  
+  
+</head>
+<body>
+  <a class="skip" href="#main">Перейти к исследованию</a>
+  <aside class="sidebar">
+    <a class="brand" href="#main" aria-label="Crypto Research Toolkit, главная"><span class="brand-mark">cr<span>↗</span></span><span>CRYPTO<span class="brand-sub">RESEARCH TOOLKIT</span></span></a>
+    <div class="sidebar-rule"></div>
+    <div class="workspace-label">РАБОЧЕЕ ПРОСТРАНСТВО <span>01</span></div>
+    <a class="nav-item active" href="#main"><span>▦</span> Исследование <span class="nav-dot"></span></a>
+    <button class="nav-item" id="format-open"><span>≡</span> Формат данных <span class="nav-arrow">↗</span></button>
+    <div class="section-label">НАБОР ДАННЫХ <span id="asset-count">0</span></div>
+    <p class="sidebar-hint">Выберите актив. Отметьте галочками ряды для сравнения.</p>
+    <div id="assets" class="asset-list" aria-label="Загруженные активы"></div>
+    <label class="upload-box" id="drop-zone" for="csv-input" tabindex="0" role="button" aria-label="Загрузить CSV или перетащить файлы">
+      <span class="upload-plus">+</span><strong>Добавить CSV</strong><span>Перетащите файлы сюда<br>до 5 МБ · до 8 активов</span>
+    </label>
+    <input type="file" id="csv-input" accept=".csv,text/csv" multiple hidden>
+    <button id="demo-load" class="text-button">↻ Загрузить демоданные</button>
+    <div class="sidebar-bottom"><div class="privacy-icon">⌘</div><strong>Ваши данные — у вас</strong><p>Расчёты в этом браузере.<br>Без отправки файлов на сервер.</p><span class="version">LOCAL FIRST <span>v0.2</span></span></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong>Исследование</strong></div><div class="topbar-right"><span class="local-badge"><i></i> Локальный режим</span><a href="https://github.com/crypota/crypto-research-toolkit" target="_blank" rel="noopener noreferrer" class="github-link">GitHub ↗</a></div></header>
+    <main id="main" tabindex="-1">
+      <div class="page-heading"><div><div class="eyebrow">МЕНЬШЕ ШУМА. БОЛЬШЕ КОНТЕКСТА.</div><h1>Данные в перспективе<span>.</span></h1><p>Цена, просадка и сравнение — в одном исследовании.</p></div><button id="export-open" class="button secondary">↓ <span>Экспорт отчёта</span></button></div>
+      <div id="notice" class="notice" role="status"><span class="notice-dot"></span><span id="notice-text"></span></div>
+      <div id="messages" class="messages" aria-live="polite"></div>
+      <section class="research-toolbar" aria-label="Настройки исследования"><div class="active-title"><span class="coin-icon" id="active-icon">A</span><div><h2 id="active-symbol">—</h2><span id="active-source">Нет данных</span></div></div><div class="periods" role="group" aria-label="Период"><button data-days="7">7Д</button><button data-days="30">30Д</button><button data-days="90">90Д</button><button class="selected" data-days="0">Всё</button></div></section>
+      <section class="metrics" aria-label="Показатели выбранного актива">
+        <article class="metric"><div class="metric-label">Последняя цена <span>↗</span></div><div class="metric-value" id="metric-price">—</div><div class="metric-note" id="metric-quote">В выбранном периоде</div></article>
+        <article class="metric"><div class="metric-label">Изменение за период <span>↗</span></div><div class="metric-value" id="metric-change">—</div><div class="metric-note" id="metric-start">От первой до последней цены</div></article>
+        <article class="metric"><div class="metric-label">Макс. просадка <span>↘</span></div><div class="metric-value" id="metric-drawdown">—</div><div class="metric-note">От предшествующего пика</div></article>
+        <article class="metric"><div class="metric-label">Наблюдений <span>◷</span></div><div class="metric-value" id="metric-count">—</div><div class="metric-note" id="metric-dates">UTC</div></article>
+      </section>
+      <section class="panel main-chart-panel" aria-labelledby="price-heading"><div class="panel-heading"><div><div class="section-kicker">ДВИЖЕНИЕ РЫНКА</div><h2 id="price-heading">Динамика цены</h2></div><div class="segmented" role="group" aria-label="Вид графика"><button data-mode="price">Цена</button><button data-mode="compare" class="selected">Сравнение · 100</button></div></div><div class="chart-meta"><div id="legend" class="legend"></div><span id="chart-range">—</span></div><div class="chart-wrap" id="price-chart" tabindex="0" role="img" aria-label="Интерактивный график цены. Точные показатели доступны в таблице ниже."></div><div class="chart-footnote"><span id="chart-note">Первое наблюдение каждого ряда в общем периоде = 100.</span><span>Время — UTC</span></div></section>
+      <div class="lower-grid">
+        <section class="panel drawdown-panel" aria-labelledby="drawdown-heading"><div class="panel-heading"><div><div class="section-kicker">ОБРАТНАЯ СТОРОНА РОСТА</div><h2 id="drawdown-heading">Глубина просадки</h2></div><span id="drawdown-badge" class="small-badge">—</span></div><div class="chart-wrap" id="drawdown-chart" tabindex="0" role="img" aria-label="Просадка выбранного актива от предыдущего максимума в выбранном периоде."></div><p class="panel-caption">Пик отсчитывается заново с начала выбранного периода.</p></section>
+        <section class="panel quality-panel" aria-labelledby="quality-heading"><div class="panel-heading"><div><div class="section-kicker">ПРОВЕРКА ИСТОЧНИКА</div><h2 id="quality-heading">Качество данных</h2></div><span id="quality-dot" class="quality-dot"></span></div><div id="quality-body"></div></section>
+      </div>
+      <section class="panel comparison-panel" aria-labelledby="comparison-heading"><div class="panel-heading"><div><div class="section-kicker">ОДИН ПЕРИОД. РАЗНЫЕ ТРАЕКТОРИИ.</div><h2 id="comparison-heading">Сравнение активов</h2></div><span class="small-badge" id="comparison-count">0 рядов</span></div><div class="table-scroll"><table><thead><tr><th scope="col">Актив</th><th scope="col">Последняя цена</th><th scope="col">Изменение</th><th scope="col">Макс. просадка</th><th scope="col">Наблюдений</th><th scope="col">Период, UTC</th></tr></thead><tbody id="comparison-body"></tbody></table></div></section>
+      <footer class="page-footer"><span>CRYPTO RESEARCH TOOLKIT <span class="footer-divider">/</span> by crypota</span><p>Исторические наблюдения. Без прогнозов доходности и оценки надёжности токена.</p></footer>
+    </main>
+  </div>
+  <dialog id="format-dialog"><div class="dialog-heading"><h2>Загрузите свою историю</h2><button class="icon-button" data-close="format-dialog" aria-label="Закрыть формат данных">×</button></div><p>Один актив в каждом UTF-8 CSV. Выберите несколько файлов, чтобы сравнить их.</p><pre>timestamp,symbol,price
+2026-01-01T00:00:00Z,SAMPLE/USD,100
+2026-01-02T00:00:00Z,SAMPLE/USD,105</pre><ul><li>Нужны ровно столбцы timestamp, symbol, price — в любом порядке.</li><li>Минимум две записи, уникальные даты с часовым поясом. Дробные секунды: до 3 знаков.</li><li>Цена от 1e-30 до 1e30. Один файл — одна пара, например BTC/USD.</li><li>До 5 МБ и 100 000 записей на файл; до 8 рядов одновременно.</li><li>Даты сортируются автоматически. Интервалы не заполняются вымышленными ценами.</li></ul><div class="dialog-note">Название пары не проверяет подлинность актива. Сохраните сведения о бирже, сети и контракте отдельно.</div><button id="template-download" class="button primary">↓ Скачать пример CSV</button></dialog>
+  <dialog id="export-dialog"><div class="dialog-heading"><h2>Сохранить исследование</h2><button class="icon-button" data-close="export-dialog" aria-label="Закрыть экспорт">×</button></div><p>Показатели и отфильтрованные наблюдения текущего исследования. Если включено сравнение — только общий период.</p><div class="export-options"><button data-export="markdown"><strong>Markdown <span>↗</span></strong><span>Читаемый отчёт с таблицей и источниками</span></button><button data-export="json"><strong>JSON <span>↗</span></strong><span>Статистика, даты, источники и SHA-256 файлов</span></button><button data-export="csv"><strong>CSV <span>↗</span></strong><span>Наблюдения выбранных рядов за текущий период</span></button><button data-export="svg"><strong>График SVG <span>↗</span></strong><span>Векторный график для заметок и публикаций</span></button></div><div class="dialog-note">Браузер считает с обычной числовой точностью JavaScript. Для десятичных расчётов используйте Python CLI.</div></dialog>
+<script>
+/* Pure analytics shared by the dashboard and Node tests. No network or DOM. */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.CryptoAnalytics = factory();
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+  const MAX_ROWS = 100000;
+  function readCSV(text) {
+    text = text.replace(/^\uFEFF/, '');
+    const rows = []; let row = [], field = '', quoted = false, closed = false;
+    function cell() { row.push(field); field = ''; closed = false; }
+    function finish() {
+      cell();
+      if (row.length !== 1 || row[0].trim() !== '') rows.push(row);
+      row = [];
+      if (rows.length > MAX_ROWS + 1) throw Error('Не более 100 000 наблюдений в одном файле.');
+    }
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (quoted) {
+        if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+        else if (c === '"') { quoted = false; closed = true; }
+        else field += c;
+      } else if (c === ',') cell();
+      else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; finish(); }
+      else if (c === '"' && field === '' && !closed) quoted = true;
+      else { if (closed || c === '"') throw Error('Некорректные кавычки в CSV.'); field += c; }
+    }
+    if (quoted) throw Error('Незакрытые кавычки в CSV.');
+    if (field || row.length || closed) finish();
+    return rows;
+  }
+  function timestamp(value) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?(Z|[+-]\d{2}:\d{2})$/.exec(value);
+    if (!m) throw Error('Дата: YYYY-MM-DDTHH:mm:ssZ или со смещением, например +04:00 (до 3 знаков миллисекунд).');
+    const [year, month, day, hour, minute, second] = m.slice(1, 7).map(Number);
+    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    const offset = m[8];
+    if (year < 1 || month < 1 || month > 12 || day < 1 || day > days[month - 1] || hour > 23 || minute > 59 || second > 59 ||
+        (offset !== 'Z' && (+offset.slice(1, 3) > 23 || +offset.slice(4, 6) > 59))) throw Error('Несуществующая дата или время.');
+    const result = Date.parse(value);
+    if (!Number.isFinite(result)) throw Error('Некорректная дата.');
+    return result;
+  }
+  function parse(text) {
+    if (new TextEncoder().encode(text).length > 5 * 1024 * 1024) throw Error('Размер файла не должен превышать 5 МБ.');
+    const rows = readCSV(text);
+    if (!rows.length || rows[0].slice().sort().join(',') !== 'price,symbol,timestamp') throw Error('Нужны ровно три столбца: timestamp,symbol,price.');
+    const header = rows.shift(); const idx = Object.fromEntries(header.map((v, i) => [v, i]));
+    let symbol; const seen = new Set(); const points = [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]; const label = `Запись ${i + 1}: `;
+      if (row.length !== 3) throw Error(label + 'неверное число столбцов.');
+      const pair = row[idx.symbol].trim();
+      if (!/^[A-Za-z0-9][A-Za-z0-9._/-]{0,47}$/.test(pair)) throw Error(label + 'некорректный символ актива.');
+      if (symbol && symbol !== pair) throw Error(label + 'один файл должен содержать одну пару.');
+      symbol = pair;
+      let time; try { time = timestamp(row[idx.timestamp].trim()); } catch (e) { throw Error(label + e.message); }
+      if (seen.has(time)) throw Error(label + 'повторяющийся момент времени после перевода в UTC.');
+      seen.add(time);
+      const rawPrice = row[idx.price].trim();
+      const coefficient = rawPrice.split(/[eE]/)[0].replace(/^[+-]/, '').replace('.', '').replace(/^0+/, '');
+      const price = Number(rawPrice);
+      if (!/^[+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(rawPrice) || !Number.isFinite(price) || price < 1e-30 || price > 1e30 || coefficient.length > 40)
+        throw Error(label + 'цена должна быть положительным числом от 1e-30 до 1e30, до 40 значащих цифр.');
+      points.push({ time, price });
+    }
+    if (points.length < 2) throw Error('Нужно минимум два наблюдения.');
+    const sorted = points.some((p, i) => i && p.time < points[i - 1].time);
+    points.sort((a, b) => a.time - b.time);
+    return { symbol, points, sorted };
+  }
+  function stats(points) {
+    if (points.length < 2) return null;
+    let peak = points[0].price, maxDrawdown = 0, min = peak, max = peak;
+    const drawdowns = [], intervals = [];
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i]; peak = Math.max(peak, p.price);
+      const dd = (1 - p.price / peak) * 100;
+      maxDrawdown = Math.max(maxDrawdown, dd); min = Math.min(min, p.price); max = Math.max(max, p.price);
+      drawdowns.push({ time: p.time, value: -dd });
+      if (i) intervals.push(p.time - points[i - 1].time);
+    }
+    const sorted = intervals.slice().sort((a, b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    const medianInterval = sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+    return { count: points.length, first: points[0].price, last: points.at(-1).price, min, max,
+      change: (points.at(-1).price / points[0].price - 1) * 100, maxDrawdown, drawdowns,
+      start: points[0].time, end: points.at(-1).time, medianInterval,
+      irregular: intervals.filter(v => Math.abs(v - medianInterval) > 1).length,
+      gaps: intervals.filter(v => v > medianInterval * 1.5).length,
+      longestGap: intervals.reduce((max, value) => Math.max(max, value), 0) };
+  }
+  function windowData(datasets, days = 0, compare = true) {
+    if (!datasets.length) return { series: [], error: 'Загрузите CSV или откройте пример.' };
+    const considered = compare ? datasets : [datasets[0]];
+    let start = Math.max(...considered.map(d => d.points[0].time));
+    const end = Math.min(...considered.map(d => d.points.at(-1).time));
+    if (days) start = Math.max(start, end - days * 86400000);
+    if (start >= end) return { series: [], error: 'У выбранных активов нет общего периода.' };
+    const series = considered.map(d => ({ ...d, points: d.points.filter(p => p.time >= start && p.time <= end) }));
+    if (series.some(d => d.points.length < 2)) return { series: [], error: 'В общем периоде нужно минимум два наблюдения для каждого актива. Расширьте период или уберите актив.' };
+    return { series, start, end };
+  }
+  // Preserve bucket extrema so a spike is not erased by simple every-Nth sampling.
+  function sample(points, limit = 900) {
+    if (points.length <= limit) return points;
+    const result = [points[0]], size = Math.ceil((points.length - 2) / Math.floor((limit - 2) / 2));
+    for (let i = 1; i < points.length - 1; i += size) {
+      const bucket = points.slice(i, Math.min(i + size, points.length - 1));
+      let lo = bucket[0], hi = lo;
+      for (const p of bucket) { if (p.value < lo.value) lo = p; if (p.value > hi.value) hi = p; }
+      if (lo === hi) result.push(lo); else result.push(...[lo, hi].sort((a, b) => a.time - b.time));
+    }
+    result.push(points.at(-1)); return result;
+  }
+  function nearest(points, time) {
+    let lo = 0, hi = points.length - 1;
+    while (lo < hi) { const mid = Math.floor((lo + hi) / 2); if (points[mid].time < time) lo = mid + 1; else hi = mid; }
+    return lo > 0 && Math.abs(points[lo - 1].time - time) <= Math.abs(points[lo].time - time) ? points[lo - 1] : points[lo];
+  }
+  function demo() {
+    return [
+      { symbol: 'ALPHA/USD', base: 128, drift: .005, amp: .15, phase: 0 },
+      { symbol: 'BETA/USD', base: 42, drift: .002, amp: .12, phase: 1.7 },
+      { symbol: 'GAMMA/USD', base: 8, drift: -.001, amp: .20, phase: 3.4 },
+    ].map(d => ({ symbol: d.symbol, sorted: false, demo: true, source: 'Вымышленный демонстрационный ряд', points: Array.from({ length: 120 }, (_, i) => ({
+      time: Date.UTC(2025, 10, 1) + i * 86400000,
+      price: +(d.base * Math.exp(d.drift * i) * (1 + d.amp * Math.sin(i / 10 + d.phase) + .03 * Math.sin(i * 1.4))).toFixed(6),
+    })) }));
+  }
+  return { parse, readCSV, stats, windowData, sample, nearest, demo, timestamp };
+});
+
+</script>
+<script>
+(function () {
+  'use strict';
+  const A = window.CryptoAnalytics;
+  const $ = id => document.getElementById(id);
+  const colors = ['#b4f272', '#8caaff', '#deabff', '#62dbbb', '#f3b572', '#f18cbd', '#76cdeb', '#e2df8a'];
+  const state = { datasets: [], active: null, mode: 'compare', days: 0, serial: 0, current: null };
+  const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
+  const dateFormat = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const shortDate = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'short', timeZone: 'UTC' });
+  const longDate = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'UTC' });
+  const pct = value => (value > 0 ? '+' : '') + (Math.abs(value) >= 1e9 ? value.toExponential(3) : number.format(value)) + '%';
+  function price(value) {
+    if (value === undefined) return '—';
+    if (value < .000001 || value >= 1e12) return value.toExponential(3);
+    return new Intl.NumberFormat('ru-RU', { maximumSignificantDigits: value < 1 ? 6 : 8 }).format(value);
+  }
+  function element(tag, className, text) {
+    const node = document.createElement(tag); if (className) node.className = className;
+    if (text !== undefined) node.textContent = text; return node;
+  }
+  function svgNode(tag, attrs = {}, text) {
+    const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+    if (text !== undefined) node.textContent = text; return node;
+  }
+  function message(text) {
+    const box = element('div', 'message'); box.setAttribute('role', 'alert');
+    box.append(element('span', '', text)); const close = element('button', '', '×');
+    close.setAttribute('aria-label', 'Закрыть сообщение'); close.onclick = () => box.remove(); box.append(close); $('messages').append(box);
+  }
+  function addDataset(dataset) {
+    const labels = new Set(state.datasets.map(d => d.label));
+    let label = dataset.symbol, suffix = 2;
+    while (labels.has(label)) label = dataset.symbol + ` (${suffix++})`;
+    const id = ++state.serial;
+    const result = { ...dataset, id, selected: true, color: colors[(id - 1) % colors.length], label };
+    state.datasets.push(result); if (state.active === null) state.active = id;
+  }
+  function loadDemo() {
+    if (state.datasets.length + 3 > 8) { message('Для демонстрации нужны три свободных места. Удалите ненужные ряды.'); return; }
+    A.demo().forEach(addDataset); render();
+  }
+  function renderAssets() {
+    $('assets').replaceChildren(); $('asset-count').textContent = state.datasets.length;
+    if (!state.datasets.length) $('assets').append(element('p', 'empty-assets', 'Добавьте первый набор данных.'));
+    for (const d of state.datasets) {
+      const row = element('div', 'asset-row' + (d.id === state.active ? ' current' : ''));
+      row.style.setProperty('--coin', d.color);
+      const select = element('button', 'asset-select'); select.setAttribute('aria-label', `Выбрать ${d.label}`);
+      select.setAttribute('aria-pressed', String(d.id === state.active));
+      select.append(element('span', 'asset-monogram', d.symbol[0]));
+      const name = element('span'); const title = element('span', 'asset-name', d.label); title.title = d.label;
+      name.append(title, element('span', 'asset-sub', (d.demo ? 'Демо · ' : '') + number.format(d.points.length) + ' точек')); select.append(name);
+      select.onclick = () => { state.active = d.id; d.selected = true; render(); };
+      const check = element('input', 'asset-check'); check.type = 'checkbox'; check.checked = d.selected;
+      check.setAttribute('aria-label', `Сравнивать ${d.label}`);
+      check.onchange = () => {
+        d.selected = check.checked;
+        if (!d.selected && state.active === d.id) state.active = state.datasets.find(x => x.selected)?.id ?? null;
+        if (d.selected && state.active === null) state.active = d.id;
+        render();
+      };
+      const remove = element('button', 'asset-remove', '×'); remove.setAttribute('aria-label', `Удалить ${d.label}`);
+      remove.onclick = () => {
+        state.datasets = state.datasets.filter(x => x.id !== d.id);
+        if (state.active === d.id) state.active = state.datasets.find(x => x.selected)?.id ?? null;
+        render();
+      };
+      row.append(select, check, remove); $('assets').append(row);
+    }
+  }
+  function selectedData() {
+    const active = state.datasets.find(d => d.id === state.active);
+    if (!active) return [];
+    return [active, ...state.datasets.filter(d => d.selected && d.id !== active.id)];
+  }
+  function render() {
+    renderAssets();
+    document.querySelectorAll('[data-days]').forEach(b => { const active = +b.dataset.days === state.days; b.classList.toggle('selected', active); b.setAttribute('aria-pressed', active); });
+    document.querySelectorAll('[data-mode]').forEach(b => { const active = b.dataset.mode === state.mode; b.classList.toggle('selected', active); b.setAttribute('aria-pressed', active); });
+    const selected = selectedData();
+    const windowed = A.windowData(selected, state.days, state.mode === 'compare');
+    state.current = windowed;
+    const active = selected[0]; const points = windowed.series[0]?.points || [];
+    const metrics = A.stats(points);
+    const hasDemo = state.datasets.some(d => d.demo);
+    $('notice').classList.toggle('real', !hasDemo);
+    $('notice-text').textContent = hasDemo
+      ? 'Демонстрационные ALPHA, BETA и GAMMA — вымышленные активы. Это пример работы панели, не реальные котировки.'
+      : 'Файлы обрабатываются локально и не сохраняются после закрытия страницы. Вы смотрите загруженную историю, не live-котировки.';
+    $('active-symbol').textContent = active?.label || 'Выберите актив';
+    $('active-icon').textContent = active?.symbol[0] || '+';
+    $('active-icon').style.color = active?.color || colors[0];
+    $('active-source').textContent = active ? (active.demo ? 'Вымышленный ряд · ежедневные наблюдения' : active.source) : 'Загрузите CSV или выберите ряд в списке';
+    $('active-source').title = active?.source || '';
+    $('metric-price').textContent = metrics ? price(metrics.last) : '—';
+    $('metric-quote').textContent = metrics ? `Мин. ${price(metrics.min)} · макс. ${price(metrics.max)}` : 'В выбранном периоде';
+    $('metric-change').textContent = metrics ? pct(metrics.change) : '—';
+    $('metric-change').className = 'metric-value' + (metrics ? (metrics.change >= 0 ? ' positive' : ' negative') : '');
+    $('metric-start').textContent = metrics ? `Начальная цена: ${price(metrics.first)}` : 'От первой до последней цены';
+    $('metric-drawdown').textContent = metrics ? number.format(metrics.maxDrawdown) + '%' : '—';
+    $('metric-drawdown').className = 'metric-value' + (metrics && metrics.maxDrawdown > 0 ? ' negative' : '');
+    $('metric-count').textContent = metrics ? number.format(metrics.count) : '—';
+    $('metric-dates').textContent = metrics ? `${shortDate.format(metrics.start)} — ${shortDate.format(metrics.end)} · UTC` : 'UTC';
+    $('drawdown-badge').textContent = metrics ? 'MAX ' + number.format(metrics.maxDrawdown) + '%' : '—';
+    $('price-heading').textContent = state.mode === 'compare' ? 'Сравнение траекторий' : 'Динамика цены';
+    $('chart-note').textContent = state.mode === 'compare' ? 'Первое наблюдение каждого ряда в общем периоде = 100.' : 'Цена выбранного актива в единицах исходной пары.';
+    $('chart-range').textContent = windowed.series.length ? `${dateFormat.format(windowed.start)} — ${dateFormat.format(windowed.end)}` : 'Нет общего периода';
+    $('legend').replaceChildren();
+    for (const d of windowed.series) { const item = element('span', 'legend-item'); const dot = element('i'); dot.style.background = d.color; item.append(dot, document.createTextNode(d.label)); $('legend').append(item); }
+    const chartSeries = windowed.series.map(d => ({ ...d, points: d.points.map(p => ({ time: p.time, value: state.mode === 'compare' ? p.price / d.points[0].price * 100 : p.price })) }));
+    drawChart($('price-chart'), chartSeries, { start: windowed.start, end: windowed.end, error: windowed.error, normalized: state.mode === 'compare', id: 'price' });
+    drawChart($('drawdown-chart'), metrics ? [{ label: active.label, color: '#ff8d94', points: metrics.drawdowns }] : [], { start: windowed.start, end: windowed.end, error: windowed.error, drawdown: true, id: 'drawdown' });
+    renderQuality(active, metrics);
+    $('comparison-body').replaceChildren();
+    for (const d of windowed.series) {
+      const m = A.stats(d.points); const tr = element('tr'); const name = element('td'); const dot = element('i'); dot.style.background = d.color;
+      name.append(dot, document.createTextNode(d.label));
+      tr.append(name, element('td', '', price(m.last)), element('td', m.change >= 0 ? 'positive' : 'negative', pct(m.change)),
+        element('td', m.maxDrawdown > 0 ? 'negative' : '', number.format(m.maxDrawdown) + '%'), element('td', '', number.format(m.count)),
+        element('td', '', shortDate.format(m.start) + ' — ' + shortDate.format(m.end)));
+      $('comparison-body').append(tr);
+    }
+    if (!windowed.series.length) { const td = element('td', '', windowed.error); td.colSpan = 6; const tr = element('tr'); tr.append(td); $('comparison-body').append(tr); }
+    $('comparison-count').textContent = windowed.series.length + ' ряд(а)';
+    $('export-open').disabled = !windowed.series.length;
+  }
+  function interval(value) {
+    if (value >= 86400000) return number.format(value / 86400000) + ' дн.';
+    if (value >= 3600000) return number.format(value / 3600000) + ' ч';
+    if (value >= 60000) return number.format(value / 60000) + ' мин.';
+    return number.format(value / 1000) + ' сек.';
+  }
+  function renderQuality(dataset, filteredMetrics) {
+    const body = $('quality-body'); body.className = 'quality-body'; body.replaceChildren();
+    if (!dataset) { body.append(element('p', 'quality-summary', 'Выберите актив для проверки.')); return; }
+    const all = A.stats(dataset.points); const m = filteredMetrics || all;
+    const warning = m.irregular > 0 || dataset.sorted;
+    $('quality-dot').classList.toggle('warning', warning);
+    const rows = [
+      ['Часовой пояс', 'UTC · проверен'],
+      ['Медианный интервал', interval(m.medianInterval)],
+      ['Интервалов > 1,5× медианы', String(m.gaps)],
+      ['Последняя запись файла', dateFormat.format(all.end)],
+    ];
+    for (const [label, value] of rows) { const row = element('div', 'quality-row'); row.append(element('span', '', label), element('strong', '', value)); body.append(row); }
+    let note = m.irregular ? `Нерегулярных интервалов: ${m.irregular}. Самый длинный: ${interval(m.longestGap)}. ` : 'Интервалы равномерные. ';
+    if (dataset.sorted) note += 'Строки автоматически отсортированы. ';
+    note += 'Пропуски оцениваются по интервалам, а не по расписанию источника. Подлинность и полнота данных не проверены.';
+    body.append(element('p', 'quality-summary' + (warning ? ' warning' : ''), note));
+  }
+  function drawChart(container, series, options) {
+    container.replaceChildren();
+    container.onkeydown = null;
+    if (!series.length) { container.append(element('div', 'chart-empty', options.error || 'Нет данных.')); return; }
+    const w = Math.max(container.clientWidth, 260), h = container.clientHeight;
+    const pad = { left: 13, right: w < 500 ? 63 : 77, top: 17, bottom: 33 };
+    const pw = w - pad.left - pad.right, ph = h - pad.top - pad.bottom;
+    let min = Infinity, max = -Infinity;
+    for (const s of series) for (const p of s.points) { min = Math.min(min, p.value); max = Math.max(max, p.value); }
+    let range = max - min;
+    if (!range) range = Math.abs(max) * .1 || 1;
+    if (options.drawdown) { max = 0; min = Math.min(-1, min * 1.12); }
+    else { min = Math.max(0, min - range * .16); max += range * .16; }
+    const x = time => pad.left + (time - options.start) / (options.end - options.start) * pw;
+    const y = value => pad.top + (max - value) / (max - min) * ph;
+    const svg = svgNode('svg', { viewBox: `0 0 ${w} ${h}`, width: w, height: h, 'aria-hidden': 'true', xmlns: 'http://www.w3.org/2000/svg' });
+    const defs = svgNode('defs'); const gradient = svgNode('linearGradient', { id: options.id + '-fill', x1: '0', x2: '0', y1: '0', y2: '1' });
+    gradient.append(svgNode('stop', { offset: '0%', 'stop-color': series[0].color, 'stop-opacity': '.16' }), svgNode('stop', { offset: '100%', 'stop-color': series[0].color, 'stop-opacity': '0' })); defs.append(gradient); svg.append(defs);
+    for (let i = 0; i < 5; i++) {
+      const yy = pad.top + ph * i / 4; const value = max - (max - min) * i / 4;
+      svg.append(svgNode('line', { x1: pad.left, x2: w - pad.right, y1: yy, y2: yy, class: 'gridline', stroke: '#242b31', 'stroke-dasharray': '3 5' }));
+      let label = options.drawdown ? number.format(value) + '%' : Math.abs(value) >= 1e12 ? value.toExponential(2) : Math.abs(value) >= 1e6 ? number.format(value / 1e6) + 'M' : Math.abs(value) >= 1e4 ? number.format(value / 1e3) + 'K' : Math.abs(value) >= 1 ? number.format(value) : price(value);
+      svg.append(svgNode('text', { x: w - pad.right + 12, y: yy + 3, fill: '#73808d', 'font-size': '10' }, label));
+    }
+    const ticks = w < 500 ? 3 : 5;
+    for (let i = 0; i < ticks; i++) {
+      const xx = pad.left + pw * i / (ticks - 1); const t = options.start + (options.end - options.start) * i / (ticks - 1);
+      svg.append(svgNode('text', { x: xx, y: h - 8, 'text-anchor': i === 0 ? 'start' : i === ticks - 1 ? 'end' : 'middle', fill: '#73808d', 'font-size': '10' }, shortDate.format(t)));
+    }
+    series.forEach((s, i) => {
+      const reduced = A.sample(s.points, Math.max(100, Math.floor(pw)));
+      const line = reduced.map((p, j) => `${j ? 'L' : 'M'}${x(p.time).toFixed(2)},${y(p.value).toFixed(2)}`).join(' ');
+      if (i === 0) {
+        const bottom = options.drawdown ? y(0) : pad.top + ph;
+        svg.append(svgNode('path', { d: line + ` L${x(reduced.at(-1).time)},${bottom} L${x(reduced[0].time)},${bottom} Z`, fill: `url(#${options.id}-fill)` }));
+      }
+      svg.append(svgNode('path', { d: line, fill: 'none', stroke: s.color, 'stroke-width': i === 0 ? '2.3' : '1.8', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+    });
+    const cross = svgNode('g', { 'data-transient': 'true', visibility: 'hidden' });
+    const line = svgNode('line', { y1: pad.top, y2: pad.top + ph, stroke: '#61707e', 'stroke-dasharray': '4 4' }); cross.append(line);
+    const dots = series.map(s => { const dot = svgNode('circle', { r: '4', fill: s.color, stroke: '#111418', 'stroke-width': '2' }); cross.append(dot); return dot; }); svg.append(cross);
+    container.append(svg);
+    const tooltip = element('div', 'chart-tooltip'); tooltip.hidden = true; container.append(tooltip);
+    function inspect(time, cx) {
+      cross.setAttribute('visibility', 'visible'); line.setAttribute('x1', cx); line.setAttribute('x2', cx);
+      tooltip.replaceChildren(element('time', '', longDate.format(time) + ' UTC'));
+      if (series.length > 1) tooltip.append(element('span', 'tooltip-sample', 'Ближайшие наблюдения каждого ряда'));
+      series.forEach((s, i) => {
+        const p = A.nearest(s.points, time); dots[i].setAttribute('cx', x(p.time)); dots[i].setAttribute('cy', y(p.value));
+        const row = element('div', 'tooltip-row'); const name = element('span', '', s.label); name.style.color = s.color;
+        row.append(name, element('strong', '', options.drawdown ? number.format(p.value) + '%' : price(p.value))); tooltip.append(row);
+        if (series.length > 1) tooltip.append(element('span', 'tooltip-sample', longDate.format(p.time) + ' UTC'));
+      });
+      tooltip.hidden = false;
+      tooltip.style.left = Math.max(0, Math.min(cx + 14, w - tooltip.offsetWidth - 5)) + 'px';
+    }
+    svg.addEventListener('pointermove', e => {
+      const rect = svg.getBoundingClientRect(), cx = Math.max(pad.left, Math.min(w - pad.right, e.clientX - rect.left));
+      inspect(options.start + (cx - pad.left) / pw * (options.end - options.start), cx);
+    });
+    function clear() { tooltip.hidden = true; cross.setAttribute('visibility', 'hidden'); }
+    svg.addEventListener('pointerleave', clear); container.onblur = clear;
+    let keyIndex = 0;
+    container.onkeydown = e => {
+      if (e.key === 'Escape') { clear(); return; }
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+      e.preventDefault();
+      keyIndex = e.key === 'Home' ? 0 : e.key === 'End' ? series[0].points.length - 1 : Math.max(0, Math.min(series[0].points.length - 1, keyIndex + (e.key === 'ArrowLeft' ? -1 : 1)));
+      const p = series[0].points[keyIndex]; inspect(p.time, x(p.time));
+    };
+  }
+  let importing = false;
+  async function importFiles(files) {
+    if (importing) return;
+    importing = true; $('csv-input').disabled = true;
+    const errors = []; let firstImported = null;
+    try {
+      for (const file of files) {
+        if (state.datasets.length >= 8) { errors.push('Одновременно можно открыть до 8 рядов. Удалите ненужные.'); break; }
+        try {
+          if (file.size > 5 * 1024 * 1024) throw Error('Файл превышает 5 МБ.');
+          const raw = await file.arrayBuffer();
+          const text = new TextDecoder('utf-8', { fatal: true }).decode(raw);
+          const dataset = A.parse(text);
+          let hash = null;
+          if (window.crypto?.subtle) {
+            const digest = await crypto.subtle.digest('SHA-256', raw);
+            hash = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+          }
+          addDataset({ ...dataset, demo: false, source: file.name, hash });
+          if (firstImported === null) firstImported = state.datasets.at(-1).id;
+        } catch (error) { errors.push(file.name + ': ' + error.message); }
+      }
+      if (firstImported !== null) {
+        state.datasets.forEach(d => { d.selected = !d.demo; });
+        state.active = firstImported; state.days = 0;
+      }
+      render(); errors.forEach(message);
+    } finally { importing = false; $('csv-input').disabled = false; $('csv-input').value = ''; }
+  }
+  function download(content, type, filename) {
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const a = element('a'); a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  }
+  const markdownEscape = text => String(text).replace(/[\\`*_\[\]<>|]/g, '\\$&').replace(/[\r\n]/g, ' ');
+  function reportObject() {
+    return { title: 'Crypto Research Toolkit', generated_at_utc: new Date().toISOString(), mode: state.mode,
+      period: { start_utc: new Date(state.current.start).toISOString(), end_utc: new Date(state.current.end).toISOString() },
+      notes: ['Saved observations, not live prices. Demo series are fictional.', 'Browser calculations use JavaScript floating-point numbers.',
+        'Drawdown resets at the selected period start. No liquidity, safety, or future-return assessment.', 'Gap detection is a heuristic using 1.5 times the median interval.'],
+      series: state.current.series.map(d => { const m = A.stats(d.points); return {
+        label: d.label, symbol: d.symbol, synthetic: !!d.demo, source: d.source, input_sha256: d.hash || null,
+        start_utc: new Date(m.start).toISOString(), end_utc: new Date(m.end).toISOString(), observations: m.count,
+        first_price: m.first, last_price: m.last, sample_min: m.min, sample_max: m.max,
+        change_pct: m.change, max_drawdown_pct: m.maxDrawdown,
+        quality: { median_interval_ms: m.medianInterval, irregular_intervals: m.irregular, long_intervals: m.gaps, longest_interval_ms: m.longestGap },
+      }; }) };
+  }
+  function exportReport(format) {
+    if (!state.current?.series.length) return;
+    const report = reportObject();
+    if (format === 'json') download(JSON.stringify(report, null, 2), 'application/json', 'crypto-research-report.json');
+    if (format === 'markdown') {
+      const rows = ['# Crypto Research Toolkit', '', `Generated: ${report.generated_at_utc}`, `Period (UTC): ${report.period.start_utc} — ${report.period.end_utc}`, '',
+        '| Series | Synthetic | First | Last | Change (%) | Max drawdown (%) | Observations |', '| --- | --- | --- | --- | --- | --- | --- |'];
+      for (const s of report.series) rows.push(`| ${markdownEscape(s.label)} | ${s.synthetic ? 'YES' : 'No'} | ${s.first_price} | ${s.last_price} | ${s.change_pct.toFixed(6)} | ${s.max_drawdown_pct.toFixed(6)} | ${s.observations} |`);
+      rows.push('', '## Sources', '');
+      for (const s of report.series) rows.push(`- ${markdownEscape(s.label)}: ${markdownEscape(s.source)}; SHA-256: ${s.input_sha256 || 'unavailable / demo'}; actual UTC range: ${s.start_utc} — ${s.end_utc}; long intervals: ${s.quality.long_intervals}.`);
+      rows.push('', '## Limitations', '', ...report.notes.map(n => '- ' + n), '');
+      download(rows.join('\n'), 'text/markdown;charset=utf-8', 'crypto-research-report.md');
+    }
+    if (format === 'csv') {
+      const quote = value => '"' + String(value).replace(/"/g, '""') + '"';
+      const rows = ['timestamp,symbol,series,price,synthetic'];
+      for (const d of state.current.series) for (const p of d.points) rows.push([new Date(p.time).toISOString(), d.symbol, d.label, p.price, !!d.demo].map(quote).join(','));
+      download(rows.join('\r\n') + '\r\n', 'text/csv;charset=utf-8', 'crypto-research-observations.csv');
+    }
+    if (format === 'svg') {
+      const original = $('price-chart').querySelector('svg'); if (!original) return;
+      const width = Number(original.getAttribute('width')), height = Number(original.getAttribute('height'));
+      const svg = svgNode('svg', { xmlns: 'http://www.w3.org/2000/svg', width, height: height + 132, viewBox: `0 0 ${width} ${height + 132}` });
+      svg.append(svgNode('rect', { width: '100%', height: '100%', fill: '#111418' }));
+      svg.append(svgNode('text', { x: 18, y: 27, fill: '#edf2f5', 'font-family': 'Arial,sans-serif', 'font-size': 15 }, 'Crypto Research Toolkit · ' + (state.mode === 'compare' ? 'Normalized to 100' : 'Price')));
+      svg.append(svgNode('text', { x: 18, y: 47, fill: '#929da8', 'font-family': 'Arial,sans-serif', 'font-size': 10 }, report.period.start_utc.slice(0, 10) + ' — ' + report.period.end_utc.slice(0, 10) + ' UTC'));
+      const chart = original.cloneNode(true); chart.querySelectorAll('[data-transient]').forEach(n => n.remove());
+      const group = svgNode('g', { transform: 'translate(0,60)' }); group.append(...Array.from(chart.childNodes)); svg.append(group);
+      // A separate colored legend line per series also works on narrow screens.
+      const lineLength = Math.max(24, Math.floor((width - 36) / 6));
+      let legendLine = 0;
+      report.series.forEach((s, i) => {
+        const label = s.label + (s.synthetic ? ' [SYNTHETIC]' : '');
+        for (let pos = 0; pos < label.length; pos += lineLength) {
+          svg.append(svgNode('text', { x: 18, y: height + 79 + legendLine++ * 14, fill: state.current.series[i].color, 'font-family': 'Arial,sans-serif', 'font-size': 10 }, label.slice(pos, pos + lineLength)));
+        }
+      });
+      const finalHeight = height + 110 + legendLine * 14; svg.setAttribute('height', finalHeight); svg.setAttribute('viewBox', `0 0 ${width} ${finalHeight}`);
+      svg.append(svgNode('text', { x: 18, y: finalHeight - 12, fill: '#73808d', 'font-family': 'Arial,sans-serif', 'font-size': 9 }, 'Saved observations. No forecast. Sampled rendering; metrics use all observations.'));
+      download(new XMLSerializer().serializeToString(svg), 'image/svg+xml;charset=utf-8', 'crypto-research-chart.svg');
+    }
+    $('export-dialog').close();
+  }
+  document.querySelectorAll('[data-days]').forEach(b => b.addEventListener('click', () => { state.days = +b.dataset.days; render(); }));
+  document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { state.mode = b.dataset.mode; render(); }));
+  $('csv-input').addEventListener('change', e => importFiles(Array.from(e.target.files)));
+  const zone = $('drop-zone');
+  zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('csv-input').click(); } });
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragging'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragging'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragging'); importFiles(Array.from(e.dataTransfer.files)); });
+  // Keep an accidentally dropped CSV from navigating away from the current research.
+  window.addEventListener('dragover', e => e.preventDefault()); window.addEventListener('drop', e => e.preventDefault());
+  $('demo-load').onclick = loadDemo;
+  $('format-open').onclick = () => $('format-dialog').showModal();
+  $('export-open').onclick = () => $('export-dialog').showModal();
+  document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => $(b.dataset.close).close());
+  document.querySelectorAll('[data-export]').forEach(b => b.onclick = () => exportReport(b.dataset.export));
+  $('template-download').onclick = () => download('timestamp,symbol,price\r\n2026-01-01T00:00:00Z,SAMPLE/USD,100\r\n2026-01-02T00:00:00Z,SAMPLE/USD,120\r\n2026-01-03T00:00:00Z,SAMPLE/USD,90\r\n2026-01-04T00:00:00Z,SAMPLE/USD,110\r\n2026-01-05T00:00:00Z,SAMPLE/USD,80\r\n2026-01-06T00:00:00Z,SAMPLE/USD,105\r\n', 'text/csv;charset=utf-8', 'sample_prices.csv');
+  let resizeTimer; window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 100); });
+  loadDemo();
+})();
+
+</script>
+</body>
+</html>
